@@ -7,6 +7,8 @@ var tar = require('tar');
 var request = require('request');
 var concat = require('concat-stream');
 var gh = require('gh2');
+var path = require('path');
+var join = path.join;
 
 /**
  * Export `Package`
@@ -22,7 +24,8 @@ function Package(repo, ref) {
   if (!(this instanceof Package)) return new Package(repo, ref);
   this.repo = repo;
   this.ref = ref || 'master';
-  this.dir = [repo, ref].join('@');
+  this.slug = repo.replace('/', '-') + '@' + ref;
+  this.dir = join(process.cwd(), this.slug);
   this.gh = new gh();
 }
 
@@ -38,11 +41,11 @@ Package.prototype.auth = function(user, token) {
 
 
 /**
- * dir
+ * to
  */
 
-Package.prototype.to = function(directory) {
-  this.dir = dir;
+Package.prototype.to = function(dir) {
+  this.dir = join(dir, this.slug);
   return this;
 };
 
@@ -66,13 +69,13 @@ Package.prototype.fetch = function(fn) {
   var url = 'https://api.github.com/repos/' + this.repo + '/tarball/' + this.ref;
   var opts = this.gh.options(url);
   var req = request(opts);
+  var extract = tar.Extract({ path: this.dir, strip: 1 });
 
   req
+    .pipe(gunzip)
+    .pipe(extract)
     .on('error', fn)
     .on('end', fn);
-    .pipe(gunzip)
-    .pipe(tar.Extract({
-      path: this.dir,
-      strip: 1
-    }))
+
+  return this;
 };
