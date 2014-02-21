@@ -26,7 +26,10 @@ function Package(repo, ref) {
   this.ref = ref || 'master';
   this.slug = repo.replace('/', '-');
   this.dir = join(process.cwd(), this.slug);
-  this.gh = new gh();
+  this.gh = new gh({
+    user: Package.user,
+    token: Package.token
+  });
 }
 
 /**
@@ -34,8 +37,8 @@ function Package(repo, ref) {
  */
 
 Package.prototype.auth = function(user, token) {
-  this.gh.user = user;
-  this.gh.token = token;
+  this.gh.user = user || Package.user;
+  this.gh.token = token || Package.token;
   return this;
 };
 
@@ -61,9 +64,13 @@ Package.prototype.read = function(path, fn) {
     if (err) return fn(err);
     ref = ref ? ref.name : self.ref;
 
-    var url = 'https://raw.github.com/' + self.repo + '/' + ref.name + '/' + path;
+    var url = 'https://raw.github.com/' + self.repo + '/' + ref + '/' + path;
     var opts = self.gh.options(url);
-    request(opts, function(err, res, body) { return fn(err, body) });
+    request(opts, function(err, res, body) {
+      if (err) return fn(err);
+      else if (res.statusCode != 200) return fn(new Error(res.statusCode));
+      return fn(null, body);
+    });
   });
 
   return this;
@@ -108,6 +115,16 @@ Package.prototype.fetch = function(fn) {
 Package.prototype.lookup = function(fn) {
   this.gh.lookup(this.repo, this.ref, fn);
 };
+
+/**
+ * Static: auth
+ */
+
+Package.auth = function(user, token) {
+  this.user = user;
+  this.token = token;
+  return this;
+}
 
 /**
  * unsatisfied
