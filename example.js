@@ -5,7 +5,7 @@
 var co = require('co');
 var thunkify = require('thunkify');
 var Package = require('./');
-var pkg = new Package('matthewmueller/cheerio', '*')
+var pkg = new Package('matthewmueller/cheerio', 'gh-pages')
   .auth('matthewmueller', process.env.token)
   .to('node_modules');
 

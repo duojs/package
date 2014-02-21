@@ -4,9 +4,13 @@
   "description": "github package installer",
   "keywords": [],
   "author": "matt mueller <mattmuelle@gmail.com>",
-  "repository": { "type": "git", "url": "git://github.com/matthewmueller/gh-package.git" },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/matthewmueller/gh-package.git"
+  },
   "dependencies": {
-    "gh2": "0.0.1"
+    "gh2": "0.0.1",
+    "semver": "~2.2.1"
   },
   "devDependencies": {
     "mocha": "*",
