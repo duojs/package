@@ -2,10 +2,11 @@
  * Module dependencies
  */
 
-var gunzip = require('zlib').createGunzip();
-var tar = require('tar');
+var decompress = require('decompress').extract;
+var thunkify = require('thunkify');
 var request = require('request');
-var concat = require('concat-stream');
+var read = require('co-read');
+var request = require('co-req');
 var gh = require('gh2');
 var path = require('path');
 var join = path.join;
@@ -25,111 +26,86 @@ function Package(repo, ref) {
   this.repo = repo;
   this.ref = ref || 'master';
   this.slug = repo.replace('/', '-');
-  this.dir = join(process.cwd(), this.slug);
-  this.gh = new gh({
-    user: Package.user,
-    token: Package.token
-  });
-}
+  this.dir = process.cwd();
+  this.gh = new gh();
+  this.gh.user = Package.user;
+  this.gh.token = Package.token;
+  this.gh.lookup = thunkify(this.gh.lookup);
+};
+
+/**
+ * directory
+ */
+
+Package.prototype.directory = function(dir) {
+  if (!dir) return this.dir;
+  this.dir = dir;
+  return this;
+};
 
 /**
  * auth
  */
 
 Package.prototype.auth = function(user, token) {
-  this.gh.user = user || Package.user;
-  this.gh.token = token || Package.token;
+  this.gh.user = user;
+  this.gh.token = token;
   return this;
 };
 
-
-/**
- * to
- */
-
-Package.prototype.to = function(dir) {
-  this.dir = join(dir, this.slug);
-  return this;
+Package.prototype.lookup = function *() {
+  var ref = yield this.gh.lookup(this.repo, this.ref);
+  return ref ? ref.name : this.ref;
 };
-
 
 /**
  * read
  */
 
-Package.prototype.read = function(path, fn) {
-  var self = this;
+Package.prototype.read = function *(path) {
+  var ref = yield this.lookup();
+  var url = 'https://raw.github.com/' + this.repo + '/' + ref + '/' + path;
+  var opts = this.gh.options(url);
+  var req = request(opts);
+  var res = yield req;
 
-  this.lookup(function(err, ref) {
-    if (err) return fn(err);
-    ref = ref ? ref.name : self.ref;
+  if (res.statusCode != 200 ) {
+    throw new Error(res.statusCode);
+  }
 
-    var url = 'https://raw.github.com/' + self.repo + '/' + ref + '/' + path;
-    var opts = self.gh.options(url);
-    request(opts, function(err, res, body) {
-      if (err) return fn(err);
-      else if (res.statusCode != 200) return fn(new Error(res.statusCode));
-      return fn(null, body);
-    });
-  });
+  var body = '';
+  var buf;
 
-  return this;
+  while (buf = yield req) {
+    body += buf.toString();
+  }
+
+  return body;
 };
 
 /**
  * fetch
  */
 
-Package.prototype.fetch = function(fn) {
-  var self = this;
+Package.prototype.fetch = function *() {
+  var ref = yield this.lookup();
+  var url = 'https://api.github.com/repos/' + this.repo + '/tarball/' + ref;
+  var dir = join(this.dir, this.slug + '@' + ref);
+  var opts = this.gh.options(url);
+  var req = request(opts);
+  var res = yield req;
 
-  this.lookup(function(err, ref) {
-    if (err) return fn(err);
-    ref = ref ? ref.name : self.ref;
+  if (200 != res.statusCode) {
+    throw new Error(res.statusCode);
+  }
 
-    var url = 'https://api.github.com/repos/' + self.repo + '/tarball/' + ref;
-    var opts = self.gh.options(url);
-    var req = request(opts);
-    var dir = self.dir + '@' + ref;
-    var extract = tar.Extract({ path: dir, strip: 1 });
+  var extract = decompress({ ext: '.tar.gz', path: dir, strip: 1 });
+  var buf;
 
-    // TODO: multipipe
-    req
-      .pipe(gunzip)
-      .pipe(extract)
-      .on('end', fn);
-
-    // Error handling
-    req.on('error', fn);
-    gunzip.on('error', fn);
-    extract.on('error', fn);
-  });
+  // write body to decompressor
+  while (buf = yield req) extract.write(buf);
+  extract.end();
 
   return this;
 };
 
-/**
- * lookup
- */
-
-Package.prototype.lookup = function(fn) {
-  this.gh.lookup(this.repo, this.ref, fn);
-};
-
-/**
- * Static: auth
- */
-
-Package.auth = function(user, token) {
-  this.user = user;
-  this.token = token;
-  return this;
-}
-
-/**
- * unsatisfied
- */
-
-// Package.prototype.unsatisfied = function() {
-//   return new Error(this.repo + ' does not have the reference: ' + this.ref);
-// };
