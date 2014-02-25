@@ -4,8 +4,6 @@
 
 var decompress = require('decompress').extract;
 var thunkify = require('thunkify');
-var request = require('request');
-var read = require('co-read');
 var request = require('co-req');
 var gh = require('gh2');
 var path = require('path');
