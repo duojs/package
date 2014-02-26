@@ -12,7 +12,8 @@
     "gh2": "0.0.1",
     "decompress": "~0.1.6",
     "co-req": "0.0.3",
-    "thunkify": "0.0.1"
+    "thunkify": "0.0.1",
+    "co-write": "~0.3.0"
   },
   "devDependencies": {
     "mocha": "*",

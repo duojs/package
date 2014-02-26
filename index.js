@@ -5,6 +5,7 @@
 var decompress = require('decompress').extract;
 var thunkify = require('thunkify');
 var request = require('co-req');
+var write = require('co-write');
 var gh = require('gh2');
 var path = require('path');
 var join = path.join;
@@ -16,6 +17,12 @@ var join = path.join;
 module.exports = Package;
 
 /**
+ * In-memory cache of references
+ */
+
+var refs = {};
+
+/**
  * Initialize `Package`
  */
 
@@ -24,6 +31,7 @@ function Package(repo, ref) {
   this.repo = repo;
   this.ref = ref || 'master';
   this.slug = repo.replace('/', '-');
+  this.id = this.slug + '@' + ref;
   this.dir = process.cwd();
   this.gh = new gh();
   this.gh.user = Package.user;
@@ -52,8 +60,16 @@ Package.prototype.auth = function(user, token) {
 };
 
 Package.prototype.lookup = function *() {
+  // check if ref is in the cache
+  var key = this.repo + '@' + this.ref;
+  if (refs[key]) return refs[key];
+
   var ref = yield this.gh.lookup(this.repo, this.ref);
-  return ref ? ref.name : this.ref;
+  ref = ref ? ref.name : this.ref;
+
+  // add to cache for next time
+  refs[key] = ref;
+  return ref;
 };
 
 /**
@@ -88,7 +104,7 @@ Package.prototype.read = function *(path) {
 Package.prototype.fetch = function *() {
   var ref = yield this.lookup();
   var url = 'https://api.github.com/repos/' + this.repo + '/tarball/' + ref;
-  var dir = join(this.dir, this.slug + '@' + ref);
+  var dir = join(this.dir, this.id);
   var opts = this.gh.options(url);
   var req = request(opts);
   var res = yield req;
@@ -101,9 +117,11 @@ Package.prototype.fetch = function *() {
   var buf;
 
   // write body to decompressor
-  while (buf = yield req) extract.write(buf);
+  while (buf = yield req) {
+    yield write(extract, buf);
+  }
+
   extract.end();
 
   return this;
 };
-
