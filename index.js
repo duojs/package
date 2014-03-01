@@ -69,10 +69,11 @@ Package.prototype.resolve = function *() {
   }
 
   var ref = yield this.gh.lookup(this.repo, this.ref);
-  ref = ref ? ref.name : this.ref;
 
-  this.resolved = refs[key] = ref;
-  return ref;
+  if (!ref) throw new Error('reference: "' + this.ref + '" not found.');
+
+  this.resolved = refs[key] = ref.name;
+  return ref.name;
 };
 
 /**

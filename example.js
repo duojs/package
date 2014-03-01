@@ -5,12 +5,12 @@
 var co = require('co');
 var thunkify = require('thunkify');
 var Package = require('./');
-var pkg = new Package('component/event', '0.1.2')
+var pkg = new Package('matthewmueller/cheerio', 'gh-pages')
   .auth(process.env.user, process.env.token)
   .directory('node_modules');
 
 co(function *() {
-  yield pkg.fetch()
+  console.log(yield pkg.resolve());
 })(function(err) {
   console.log(err);
 });
