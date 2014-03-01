@@ -17,12 +17,6 @@ var join = path.join;
 module.exports = Package;
 
 /**
- * In-memory cache of references
- */
-
-var refs = {};
-
-/**
  * Initialize `Package`
  */
 
@@ -37,6 +31,7 @@ function Package(repo, ref) {
   this.gh.user = Package.user;
   this.gh.token = Package.token;
   this.gh.lookup = thunkify(this.gh.lookup);
+  this.resolved = null;
 };
 
 /**
@@ -59,16 +54,13 @@ Package.prototype.auth = function(user, token) {
   return this;
 };
 
-Package.prototype.lookup = function *() {
+Package.prototype.resolve = function *() {
   // check if ref is in the cache
   var key = this.repo + '@' + this.ref;
-  if (refs[key]) return refs[key];
-
   var ref = yield this.gh.lookup(this.repo, this.ref);
   ref = ref ? ref.name : this.ref;
 
-  // add to cache for next time
-  refs[key] = ref;
+  this.resolved = ref;
   return ref;
 };
 
@@ -77,7 +69,7 @@ Package.prototype.lookup = function *() {
  */
 
 Package.prototype.read = function *(path) {
-  var ref = yield this.lookup();
+  var ref = this.resolved || (yield this.resolve())
   var url = 'https://raw.github.com/' + this.repo + '/' + ref + '/' + path;
   var opts = this.gh.options(url);
   var req = request(opts);
@@ -102,7 +94,7 @@ Package.prototype.read = function *(path) {
  */
 
 Package.prototype.fetch = function *() {
-  var ref = yield this.lookup();
+  var ref = this.resolved || (yield this.resolve());
   var url = 'https://api.github.com/repos/' + this.repo + '/tarball/' + ref;
   var dir = join(this.dir, this.id);
   var opts = this.gh.options(url);
