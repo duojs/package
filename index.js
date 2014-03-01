@@ -17,6 +17,12 @@ var join = path.join;
 module.exports = Package;
 
 /**
+ * Cache for resolved package versions
+ */
+
+var refs = {};
+
+/**
  * Initialize `Package`
  */
 
@@ -57,10 +63,15 @@ Package.prototype.auth = function(user, token) {
 Package.prototype.resolve = function *() {
   // check if ref is in the cache
   var key = this.repo + '@' + this.ref;
+  if (refs[key]) {
+    this.resolved = refs[key];
+    return refs[key];
+  }
+
   var ref = yield this.gh.lookup(this.repo, this.ref);
   ref = ref ? ref.name : this.ref;
 
-  this.resolved = ref;
+  this.resolved = refs[key] = ref;
   return ref;
 };
 
