@@ -30,8 +30,6 @@ function Package(repo, ref) {
   if (!(this instanceof Package)) return new Package(repo, ref);
   this.repo = repo;
   this.ref = ref || 'master';
-  this.slug = repo.replace('/', '-');
-  this.id = this.slug + '@' + ref;
   this.dir = process.cwd();
   this.gh = new gh();
   this.gh.user = Package.user;
@@ -108,7 +106,7 @@ Package.prototype.read = function *(path) {
 Package.prototype.fetch = function *() {
   var ref = this.resolved || (yield this.resolve());
   var url = 'https://api.github.com/repos/' + this.repo + '/tarball/' + ref;
-  var dir = join(this.dir, this.id);
+  var dir = join(this.dir, this.slug());
   var opts = this.gh.options(url);
   var req = request(opts);
   var res = yield req;
@@ -128,4 +126,15 @@ Package.prototype.fetch = function *() {
   extract.end();
 
   return this;
+};
+
+/**
+ * Get the slug
+ */
+
+Package.prototype.toString =
+Package.prototype.slug = function() {
+  var repo = this.repo.replace('/', '-');
+  var ref = this.resolved || this.ref;
+  return repo + '@' + ref;
 };
