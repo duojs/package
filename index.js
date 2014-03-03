@@ -17,6 +17,12 @@ var join = path.join;
 module.exports = Package;
 
 /**
+ * api url
+ */
+
+var api = 'https://api.github.com';
+
+/**
  * Cache for resolved package versions
  */
 
@@ -67,7 +73,6 @@ Package.prototype.resolve = function *() {
   }
 
   var ref = yield this.gh.lookup(this.repo, this.ref);
-
   if (!ref) throw new Error('reference: "' + this.ref + '" not found.');
 
   this.resolved = refs[key] = ref.name;
@@ -79,8 +84,8 @@ Package.prototype.resolve = function *() {
  */
 
 Package.prototype.read = function *(path) {
-  var ref = this.resolved || (yield this.resolve())
-  var url = 'https://raw.github.com/' + this.repo + '/' + ref + '/' + path;
+  var ref = this.resolved || (yield this.resolve());
+  var url = api + '/repos/' + this.repo + '/contents/' + path + '?ref=' + ref;
   var opts = this.gh.options(url);
   var req = request(opts);
   var res = yield req;
@@ -105,10 +110,10 @@ Package.prototype.read = function *(path) {
 
 Package.prototype.fetch = function *() {
   var ref = this.resolved || (yield this.resolve());
-  var url = 'https://api.github.com/repos/' + this.repo + '/tarball/' + ref;
+  var url = api + '/repos/' + this.repo + '/tarball/' + ref;
   var dir = join(this.dir, this.slug());
   var opts = this.gh.options(url);
-  var req = request(opts);
+var req = request(opts);
   var res = yield req;
 
   if (200 != res.statusCode) {
