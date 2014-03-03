@@ -73,7 +73,7 @@ Package.prototype.resolve = function *() {
   }
 
   var ref = yield this.gh.lookup(this.repo, this.ref);
-  if (!ref) throw new Error('reference: "' + this.ref + '" not found.');
+  if (!ref) throw new Error(this.slug() + ': reference "' + this.ref + '" not found.');
 
   this.resolved = refs[key] = ref.name;
   return ref.name;
@@ -86,7 +86,7 @@ Package.prototype.resolve = function *() {
 Package.prototype.read = function *(path) {
   var ref = this.resolved || (yield this.resolve());
   var url = api + '/repos/' + this.repo + '/contents/' + path + '?ref=' + ref;
-  var opts = this.gh.options(url);
+  var opts = this.gh.options(url, { json: true });
   var req = request(opts);
   var res = yield req;
 
@@ -101,7 +101,9 @@ Package.prototype.read = function *(path) {
     body += buf.toString();
   }
 
-  return body;
+  body = JSON.parse(body);
+  var content = new Buffer(body.content, 'base64').toString();
+  return content;
 };
 
 /**
