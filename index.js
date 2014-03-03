@@ -113,7 +113,7 @@ Package.prototype.fetch = function *() {
   var url = api + '/repos/' + this.repo + '/tarball/' + ref;
   var dir = join(this.dir, this.slug());
   var opts = this.gh.options(url);
-var req = request(opts);
+  var req = request(opts);
   var res = yield req;
 
   if (200 != res.statusCode) {
