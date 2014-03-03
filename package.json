@@ -1,6 +1,6 @@
 {
   "name": "gh-package",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "github package installer",
   "keywords": [],
   "author": "matt mueller <mattmuelle@gmail.com>",

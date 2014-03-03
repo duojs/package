@@ -1,5 +1,10 @@
 
-n.n.n / 2014-03-01 
+0.0.4 / 2014-03-03
+==================
+
+ * fix package#read(path) for private repos
+
+0.0.3 / 2014-03-01
 ==================
 
  * add pkg.slug()/toString(). fix dir.
