@@ -1,4 +1,9 @@
 
+0.0.6 / 2014-03-30
+==================
+
+ * update docs. change name from gh-package => duo-package
+
 0.0.5 / 2014-03-03
 ==================
 
