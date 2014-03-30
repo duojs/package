@@ -1,12 +1,12 @@
 {
-  "name": "gh-package",
+  "name": "duo-package",
   "version": "0.0.5",
   "description": "github package installer",
   "keywords": [],
   "author": "matt mueller <mattmuelle@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "git://github.com/matthewmueller/gh-package.git"
+    "url": "git://github.com/matthewmueller/duo-package.git"
   },
   "dependencies": {
     "gh": "matthewmueller/gh",

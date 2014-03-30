@@ -53,6 +53,7 @@ function Package(repo, ref) {
  *
  * @param {String} dir
  * @return {Package} self
+ * @api public
  */
 
 Package.prototype.directory = function(dir) {
@@ -67,6 +68,7 @@ Package.prototype.directory = function(dir) {
  * @param {String} user
  * @param {String} token
  * @return {Package} self
+ * @api public
  */
 
 Package.prototype.auth = function(user, token) {
