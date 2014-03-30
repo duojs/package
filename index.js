@@ -6,8 +6,8 @@ var decompress = require('decompress').extract;
 var thunkify = require('thunkify');
 var request = require('co-req');
 var write = require('co-write');
-var gh = require('gh2');
 var path = require('path');
+var gh = require('gh2');
 var join = path.join;
 
 /**
@@ -17,7 +17,7 @@ var join = path.join;
 module.exports = Package;
 
 /**
- * api url
+ * API url
  */
 
 var api = 'https://api.github.com';
@@ -30,6 +30,10 @@ var refs = {};
 
 /**
  * Initialize `Package`
+ *
+ * @param {String} repo
+ * @param {String} ref
+ * @api public
  */
 
 function Package(repo, ref) {
@@ -38,14 +42,17 @@ function Package(repo, ref) {
   this.ref = ref || 'master';
   this.dir = process.cwd();
   this.gh = new gh();
-  this.gh.user = Package.user;
-  this.gh.token = Package.token;
+  this.gh.user = Package.user || null;
+  this.gh.token = Package.token || null;
   this.gh.lookup = thunkify(this.gh.lookup);
   this.resolved = null;
 };
 
 /**
- * directory
+ * Set the directory to install into
+ *
+ * @param {String} dir
+ * @return {Package} self
  */
 
 Package.prototype.directory = function(dir) {
@@ -55,14 +62,25 @@ Package.prototype.directory = function(dir) {
 };
 
 /**
- * auth
+ * Authenticate with github
+ *
+ * @param {String} user
+ * @param {String} token
+ * @return {Package} self
  */
 
 Package.prototype.auth = function(user, token) {
-  this.gh.user = user;
-  this.gh.token = token;
+  this.gh.user = user || Package.user;
+  this.gh.token = token || Package.token;
   return this;
 };
+
+/**
+ * Resolve the reference on github
+ *
+ * @return {String}
+ * @api public
+ */
 
 Package.prototype.resolve = function *() {
   // check if ref is in the cache
@@ -80,7 +98,11 @@ Package.prototype.resolve = function *() {
 };
 
 /**
- * read
+ * Read a file from github
+ *
+ * @param {String} path
+ * @param {String} content
+ * @api public
  */
 
 Package.prototype.read = function *(path) {
@@ -107,7 +129,11 @@ Package.prototype.read = function *(path) {
 };
 
 /**
- * fetch
+ * Fetch the tarball from github
+ * extracting to `dir`
+ *
+ * @return {Package} self
+ * @api public
  */
 
 Package.prototype.fetch = function *() {
@@ -137,6 +163,9 @@ Package.prototype.fetch = function *() {
 
 /**
  * Get the slug
+ *
+ * @return {String}
+ * @api public
  */
 
 Package.prototype.toString =
