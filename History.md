@@ -1,4 +1,11 @@
 
+0.0.7 / 2014-04-05
+==================
+
+ * added debug().
+ * ensure consistent content-length.
+ * don't fetch if we already have
+
 0.0.6 / 2014-03-30
 ==================
 

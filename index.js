@@ -121,6 +121,7 @@ Package.prototype.read = function *(path) {
     return str;
   } catch(e) {}
 
+  // fetch from github
   var url = api + '/repos/' + this.repo + '/contents/' + path + '?ref=' + ref;
   var opts = this.gh.options(url, { json: true });
   var req = request(opts);
@@ -213,7 +214,11 @@ Package.prototype.slug = function() {
 };
 
 /**
- * debug
+ * Debug
+ *
+ * @param {String} str
+ * @param {Mixed, ...} args
+ * @return {Package}
  */
 
 Package.prototype.debug = function(str) {
