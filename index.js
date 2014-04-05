@@ -142,7 +142,7 @@ Package.prototype.read = function *(path) {
   }
 
   // ensure downloaded matches the content-length
-  if (len) throw new Error(this.slug() + ': incomplete download');
+  if (len) throw new this.error('incomplete download');
 
   body = JSON.parse(body);
   var content = new Buffer(body.content, 'base64').toString();
@@ -186,13 +186,18 @@ Package.prototype.fetch = function *() {
     throw new Error(res.statusCode);
   }
 
+  var len = res.headers['content-length'];
   var extract = decompress({ ext: '.tar.gz', path: dir, strip: 1 });
   var buf;
 
   // write body to decompressor
   while (buf = yield req) {
+    len -= buf.length;
     yield write(extract, buf);
   }
+
+  // ensure downloaded matches the content-length
+  if (len) throw new this.error('incomplete download');
 
   extract.end();
 
@@ -228,3 +233,17 @@ Package.prototype.debug = function(str) {
   debug.apply(debug, [str].concat(args));
   return this;
 };
+
+/**
+ * Error
+ *
+ * @param {String} str
+ * @return {Error}
+ * @api public
+ */
+
+Package.prototype.error = function(str) {
+  var slug = this.slug();
+  str = slug + ': ' + str;
+  return new Error(str);
+}
