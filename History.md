@@ -1,4 +1,10 @@
 
+0.0.9 / 2014-04-05
+==================
+
+ * update decompress api
+ * check response length of fetched content
+
 0.0.8 / 2014-04-05
 ==================
 
