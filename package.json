@@ -1,6 +1,6 @@
 {
   "name": "duo-package",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "github package installer",
   "keywords": [],
   "author": "matt mueller <mattmuelle@gmail.com>",
@@ -13,7 +13,7 @@
     "co-req": "0.0.3",
     "co-write": "~0.3.0",
     "debug": "^0.8.0",
-    "decompress": "~0.1.6",
+    "decompress": "~0.2.2",
     "gh": "matthewmueller/gh",
     "thunkify": "0.0.1"
   },
