@@ -3,10 +3,12 @@
  */
 
 var decompress = require('decompress').extract;
+var debug = require('debug')('duo-package');
 var thunkify = require('thunkify');
 var request = require('co-req');
 var write = require('co-write');
 var path = require('path');
+var fs = require('co-fs');
 var gh = require('gh2');
 var join = path.join;
 
@@ -109,6 +111,16 @@ Package.prototype.resolve = function *() {
 
 Package.prototype.read = function *(path) {
   var ref = this.resolved || (yield this.resolve());
+
+  this.debug('reading %s', path);
+
+  // try local read first
+  try {
+    var str = yield this.readLocal(join(this.dir, this.slug(), path));
+    this.debug('read local copy of %s', path);
+    return str;
+  } catch(e) {}
+
   var url = api + '/repos/' + this.repo + '/contents/' + path + '?ref=' + ref;
   var opts = this.gh.options(url, { json: true });
   var req = request(opts);
@@ -118,17 +130,33 @@ Package.prototype.read = function *(path) {
     throw new Error(res.statusCode);
   }
 
+  var len = res.headers['content-length'];
+
   var body = '';
   var buf;
 
   while (buf = yield req) {
+    len -= buf.length;
     body += buf.toString();
   }
 
+  // ensure downloaded matches the content-length
+  if (len) throw new Error(this.slug() + ': incomplete download');
+
   body = JSON.parse(body);
   var content = new Buffer(body.content, 'base64').toString();
+  this.debug('read remote copy of %s from %s', path, url);
+
   return content;
 };
+
+/**
+ * Read locally
+ */
+
+Package.prototype.readLocal = function *(path) {
+  return yield fs.readFile(path, 'utf8');
+}
 
 /**
  * Fetch the tarball from github
@@ -140,8 +168,15 @@ Package.prototype.read = function *(path) {
 
 Package.prototype.fetch = function *() {
   var ref = this.resolved || (yield this.resolve());
-  var url = api + '/repos/' + this.repo + '/tarball/' + ref;
   var dir = join(this.dir, this.slug());
+
+  // don't fetch if it already exists
+  if (yield fs.exists(dir)) {
+    this.debug('already exists at %s', dir);
+    return this;
+  }
+
+  var url = api + '/repos/' + this.repo + '/tarball/' + ref;
   var opts = this.gh.options(url);
   var req = request(opts);
   var res = yield req;
@@ -175,4 +210,16 @@ Package.prototype.slug = function() {
   var repo = this.repo.replace('/', '-');
   var ref = this.resolved || this.ref;
   return repo + '@' + ref;
+};
+
+/**
+ * debug
+ */
+
+Package.prototype.debug = function(str) {
+  var args = [].slice.call(arguments, 1);
+  var slug = this.slug();
+  str = slug + ': ' + str;
+  debug.apply(debug, [str].concat(args));
+  return this;
 };
