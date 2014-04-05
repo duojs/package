@@ -2,7 +2,7 @@
  * Module dependencies
  */
 
-var decompress = require('decompress').extract;
+var decompress = require('decompress');
 var debug = require('debug')('duo-package');
 var thunkify = require('thunkify');
 var request = require('co-req');
