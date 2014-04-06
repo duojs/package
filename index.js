@@ -128,7 +128,7 @@ Package.prototype.read = function *(path) {
   var res = yield req;
 
   if (res.statusCode != 200 ) {
-    throw new Error(res.statusCode);
+    throw this.error(res.statusCode);
   }
 
   var len = res.headers['content-length'];
