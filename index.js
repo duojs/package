@@ -124,7 +124,7 @@ Package.prototype.read = function *(path) {
   // fetch from github
   var url = api + '/repos/' + this.repo + '/contents/' + path + '?ref=' + ref;
   var opts = this.gh.options(url, { json: true });
-  var req = request(opts);
+  var req = request(url, opts);
   var res = yield req;
 
   if (res.statusCode != 200 ) {
@@ -142,7 +142,7 @@ Package.prototype.read = function *(path) {
   }
 
   // ensure downloaded matches the content-length
-  if (len) throw new this.error('incomplete download');
+  if (len) throw this.error('incomplete download');
 
   body = JSON.parse(body);
   var content = new Buffer(body.content, 'base64').toString();
@@ -177,14 +177,20 @@ Package.prototype.fetch = function *() {
     return this;
   }
 
+  this.debug('fetching')
+
   var url = api + '/repos/' + this.repo + '/tarball/' + ref;
   var opts = this.gh.options(url);
-  var req = request(opts);
+  var req = request(url, opts);
   var res = yield req;
 
+  this.debug('got a response: %s', res.statusCode);
+
   if (200 != res.statusCode) {
-    throw new Error(res.statusCode);
+    throw this.error(res.statusCode);
   }
+
+  this.debug('streaming the body and extracting')
 
   var len = res.headers['content-length'];
   var extract = decompress({ ext: '.tar.gz', path: dir, strip: 1 });
@@ -197,9 +203,11 @@ Package.prototype.fetch = function *() {
   }
 
   // ensure downloaded matches the content-length
-  if (len) throw new this.error('incomplete download');
+  if (len) throw this.error('incomplete download');
 
   extract.end();
+
+  this.debug('fetched package');
 
   return this;
 };

@@ -9,7 +9,10 @@ var pkg = new Package('matthewmueller/cheerio', '*')
   .directory('node_modules');
 
 co(function *() {
-  console.log(yield pkg.fetch());
-})(function(err) {
-  console.log(err);
+
+  return yield pkg.read('package.json');
+
+})(function(err, pkg) {
+  if (err) throw err;
+  console.log(pkg);
 });

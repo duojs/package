@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "co-fs": "^1.2.0",
-    "co-req": "0.0.3",
+    "co-req": "0.0.4",
     "co-write": "~0.3.0",
     "debug": "^0.8.0",
     "decompress": "~0.2.2",
