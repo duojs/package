@@ -1,4 +1,12 @@
 
+0.0.10 / 2014-04-08
+==================
+
+ * bump co-req.
+ * fix error throwing.
+ * more debug statements
+ * update error with status code
+
 0.0.9 / 2014-04-05
 ==================
 
