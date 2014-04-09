@@ -7,6 +7,7 @@ A github package installer. Meant to be used with [duo](http://github.com/duojs/
 - github-style urls
 - semver support
 - flexible api
+- checks local before fetching remote
 
 ## Installation
 
@@ -50,8 +51,18 @@ authenticate with github. you can create a new token here: https://github.com/se
 
 set a directory to install the package in.
 
+### Package.read(path)
+
+read a file from github
+
+```js
+var content = yield pkg.read('component.json');
+```
+
 ### Package.fetch()
 
 fetch the package. returns a generator that can be yielded in a generator function or wrapped in [co](http://github.com/visionmedia/co).
 
-
+```js
+yield pkg.fetch()
+```
