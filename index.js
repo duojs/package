@@ -2,6 +2,7 @@
  * Module dependencies
  */
 
+var Emitter = require('events').EventEmitter;
 var decompress = require('decompress');
 var debug = require('debug')('duo-package');
 var thunkify = require('thunkify');
@@ -40,6 +41,7 @@ var refs = {};
 
 function Package(repo, ref) {
   if (!(this instanceof Package)) return new Package(repo, ref);
+  Emitter.call(this);
   this.repo = repo;
   this.ref = ref || 'master';
   this.dir = process.cwd();
@@ -49,6 +51,12 @@ function Package(repo, ref) {
   this.gh.lookup = thunkify(this.gh.lookup);
   this.resolved = null;
 };
+
+/**
+ * Inherit `EventEmitter`
+ */
+
+Package.prototype.__proto__ = Emitter.prototype;
 
 /**
  * Set the directory to install into
@@ -171,6 +179,9 @@ Package.prototype.fetch = function *() {
   var ref = this.resolved || (yield this.resolve());
   var dir = join(this.dir, this.slug());
 
+  // fetching
+  this.emit('fetching');
+
   // don't fetch if it already exists
   if (yield fs.exists(dir)) {
     this.debug('already exists at %s', dir);
@@ -207,6 +218,8 @@ Package.prototype.fetch = function *() {
 
   extract.end();
 
+  // fetched
+  this.emit('fetch');
   this.debug('fetched package');
 
   return this;

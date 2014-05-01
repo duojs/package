@@ -18,9 +18,9 @@
     "thunkify": "0.0.1"
   },
   "devDependencies": {
+    "co": "^3.0.5",
     "mocha": "*",
-    "should": "*",
-    "co": "*"
+    "should": "*"
   },
   "main": "index"
 }
