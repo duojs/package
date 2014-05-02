@@ -6,6 +6,7 @@ var Emitter = require('events').EventEmitter;
 var decompress = require('decompress');
 var debug = require('debug')('duo-package');
 var thunkify = require('thunkify');
+var resolve = thunkify(require('gh-resolve'));
 var request = require('co-req');
 var write = require('co-write');
 var path = require('path');
@@ -102,7 +103,7 @@ Package.prototype.resolve = function *() {
     return refs[key];
   }
 
-  var ref = yield this.gh.lookup(this.repo, this.ref);
+  var ref = yield resolve(key, this.gh.user, this.gh.token);
   if (!ref) throw new Error(this.slug() + ': reference "' + this.ref + '" not found.');
 
   this.resolved = refs[key] = ref.name;
