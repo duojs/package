@@ -106,7 +106,7 @@ Package.prototype.resolve = function *() {
   var ref = yield resolve(key, this.gh.user, this.gh.token);
   if (!ref) throw new Error(this.slug() + ': reference "' + this.ref + '" not found.');
 
-  this.resolved = refs[key] = ref.name;
+  this.resolved = refs[key] = ref.name.replace('/', '-');
   return ref.name;
 };
 
