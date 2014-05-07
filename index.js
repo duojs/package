@@ -9,6 +9,7 @@ var thunkify = require('thunkify');
 var resolve = thunkify(require('gh-resolve'));
 var request = require('co-req');
 var write = require('co-write');
+var semver = require('semver');
 var path = require('path');
 var fs = require('co-fs');
 var gh = require('gh2');
@@ -21,16 +22,16 @@ var join = path.join;
 module.exports = Package;
 
 /**
+ * Ref cache.
+ */
+
+var refs = {};
+
+/**
  * API url
  */
 
 var api = 'https://api.github.com';
-
-/**
- * Cache for resolved package versions
- */
-
-var refs = {};
 
 /**
  * Initialize `Package`
@@ -98,15 +99,22 @@ Package.prototype.auth = function(user, token) {
 Package.prototype.resolve = function *() {
   // check if ref is in the cache
   var key = this.repo + '@' + this.ref;
-  if (refs[key]) {
-    this.resolved = refs[key];
-    return refs[key];
+  this.resolved = cached(this.repo, this.ref);
+
+  // resolved
+  if (this.resolved) {
+    this.debug('got %s from cache', this.resolved);
+    return this.resolved;
   }
 
+  // resolve
   var ref = yield resolve(key, this.gh.user, this.gh.token);
   if (!ref) throw new Error(this.slug() + ': reference "' + this.ref + '" not found.');
 
-  this.resolved = refs[key] = ref.name;
+  // cache
+  this.resolved = ref.name;
+  (refs[this.repo] = refs[this.repo] || []).push(ref.name);
+  this.debug('add %s to cache', ref.name);
   return ref.name;
 };
 
@@ -268,4 +276,38 @@ Package.prototype.error = function(str) {
   var slug = this.slug();
   str = slug + ': ' + str;
   return new Error(str);
+}
+
+/**
+ * Check if the given version `a` is equal to `b`.
+ * 
+ * @param {String} a
+ * @param {String} b
+ * @return {Boolean}
+ * @api private
+ */
+
+function equals(a, b){
+  try {
+    return semver.satisfies(a, b) || a == b;
+  } catch (e) {
+    return a == b;
+  }
+}
+
+/**
+ * Check if the given `repo` with `version` is cached.
+ * 
+ * @param {String} repo
+ * @param {String} version
+ * @return {String}
+ * @api privae
+ */
+
+function cached(repo, version){
+  var arr = refs[repo] || [];
+
+  for (var i = 0; i < arr.length; ++i) {
+    if (equals(arr[i], version)) return arr[i];
+  }
 }
