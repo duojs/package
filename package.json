@@ -15,7 +15,8 @@
     "debug": "^0.8.0",
     "decompress": "~0.2.2",
     "gh": "matthewmueller/gh",
-    "thunkify": "0.0.1"
+    "thunkify": "0.0.1",
+    "gh-resolve": "0.1.2"
   },
   "devDependencies": {
     "co": "^3.0.5",
