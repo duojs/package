@@ -1,3 +1,4 @@
+
 /**
  * Module dependencies
  */
@@ -108,8 +109,14 @@ Package.prototype.resolve = function *() {
   }
 
   // resolve
-  var ref = yield resolve(key, this.gh.user, this.gh.token);
-  if (!ref) throw new Error(this.slug() + ': reference "' + this.ref + '" not found.');
+  try {
+    var ref = yield resolve(key, this.gh.user, this.gh.token);
+  } catch (e) {
+    throw new Error(this.slug() + ': reference "' + this.ref + '" not found.')
+  }
+
+  // couldn't resolve
+  if (!ref) throw new Error(this.slug() + ': reference "' + this.ref + '" not found');
 
   // cache
   this.resolved = ref.name;
