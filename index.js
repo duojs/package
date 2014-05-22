@@ -110,6 +110,7 @@ Package.prototype.resolve = function *() {
 
   // resolve
   try {
+    this.emit('resolve');
     var ref = yield resolve(key, this.gh.user, this.gh.token);
   } catch (e) {
     throw new Error(this.slug() + ': reference "' + this.ref + '" not found.')
@@ -119,6 +120,7 @@ Package.prototype.resolve = function *() {
   if (!ref) throw new Error(this.slug() + ': reference "' + this.ref + '" not found');
 
   // cache
+  this.emit('resolved');
   this.resolved = ref.name;
   (refs[this.repo] = refs[this.repo] || []).push(ref.name);
   this.debug('add %s to cache', ref.name);
