@@ -1,4 +1,10 @@
 
+0.1.1 / 2014-05-29 
+==================
+
+ * only check .netrc once
+ * fetch using 'download' instead of 'co-req'. fixes inconsistent dropped requests and half downloaded packages
+
 0.1.0 / 2014-05-29 
 ==================
 
