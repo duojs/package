@@ -42,6 +42,12 @@ var home = process.env.HOME || process.env.HOMEPATH;
 var api = 'https://api.github.com';
 
 /**
+ * credentials from ~/.netrc
+ */
+
+var credentials = {};
+
+/**
  * Initialize `Package`
  *
  * @param {String} repo
@@ -56,10 +62,9 @@ function Package(repo, ref) {
   this.ref = ref || '*';
   this.ua = 'duo-package';
   this.dir = process.cwd();
-  this.user = Package.user || null;
-  this.token = Package.token || null;
+  this.user = Package.user || credentials.user || null;
+  this.token = Package.token || credentials.token || null;
   this.resolved = false;
-  this.netrc = true;
 };
 
 /**
@@ -117,8 +122,8 @@ Package.prototype.useragent = function(ua) {
  */
 
 Package.prototype.auth = function(user, token) {
-  this.user = user || Package.user;
-  this.token = token || Package.token;
+  this.user = user || this.user || Package.user || credentials.user;
+  this.token = token || this.token || Package.token || credentials.token;
   return this;
 };
 
@@ -146,6 +151,7 @@ Package.prototype.resolve = function *() {
   // resolve
   try {
     this.emit('resolving');
+    this.auth();
     var ref = yield resolve(key, this.user, this.token);
   } catch (e) {
     throw error('%s: reference %s not found', this.slug(), this.ref);
@@ -281,7 +287,7 @@ Package.prototype.fetch = function *() {
 
 Package.prototype.authenticate = function *() {
   if (this.user && this.token) return this;
-  else if (!this.netrc) return this;
+  else if (credentials.user || credentials.token) return this;
 
   this.debug('reading from ~/.netrc');
 
@@ -289,20 +295,12 @@ Package.prototype.authenticate = function *() {
     var content = yield fs.readFile(join(home, '.netrc'), 'utf8');
     var host = url.parse(api).host;
     var obj = netrc(content)[host];
-    
-    if (obj) {
-      if (obj.login) this.user = obj.login;
-      if (obj.password) this.token = obj.password;
-      this.debug('read auth details from ~/.netrc');
-    } else {
-      this.debug('%s: api not found in ~/netrc', api);
-    }
+    credentials.user = obj.login;
+    credentials.token = obj.password;
+    this.debug('read auth details from ~/.netrc');
   } catch(e) {
     this.debug('no ~/.netrc found');
   }
-
-  this.netrc = false;
-  return this;
 };
 
 
@@ -374,9 +372,9 @@ Package.prototype.download = thunkify(function(url, dest, opts, fn) {
  */
 
 Package.prototype.options = function(url, other){
+  this.auth();
   var token = this.token;
   var user = this.user;
-  var pass = this.pass;
 
   var opts = {
     url: url,
@@ -388,7 +386,6 @@ Package.prototype.options = function(url, other){
   }
 
   if (token) opts.headers.Authorization = 'Bearer ' + token;
-  if (user && pass) opts.headers.Authorization = 'Basic ' + basic(user, pass);
 
   return opts;
 };
