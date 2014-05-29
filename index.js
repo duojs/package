@@ -5,18 +5,16 @@
 
 var debug = require('debug')('duo-package');
 var Emitter = require('events').EventEmitter;
-var decompress = require('decompress');
-var error = require('better-error');
 var thunkify = require('thunkify');
 var resolve = thunkify(require('gh-resolve'));
+var error = require('better-error');
+var download = require('download');
 var netrc = require('netrc').parse;
 var request = require('co-req');
-var write = require('co-write');
 var semver = require('semver');
 var path = require('path');
 var fs = require('co-fs');
 var url = require('url');
-var gh = require('gh2');
 var join = path.join;
 
 /**
@@ -150,7 +148,7 @@ Package.prototype.resolve = function *() {
     this.emit('resolving');
     var ref = yield resolve(key, this.user, this.token);
   } catch (e) {
-    throw new Error(this.slug() + ': reference "' + this.ref + '" not found.')
+    throw error('%s: reference %s not found', this.slug(), this.ref);
   }
 
   // couldn't resolve
@@ -167,6 +165,10 @@ Package.prototype.resolve = function *() {
 /**
  * Read a file from github
  *
+ * TODO: either remove entirely, or
+ * replace co-req with something else, or
+ * fix random request dropping in co-req
+ * 
  * @param {String} path
  * @param {String} content
  * @api public
@@ -177,11 +179,13 @@ Package.prototype.read = function *(path) {
 
   var ref = this.resolved || (yield this.resolve());
 
+  this.emit('reading');
   this.debug('reading %s', path);
 
   // try local read first
   try {
     var str = yield this.readLocal(join(this.dir, this.slug(), path));
+    this.emit('read');
     this.debug('read local copy of %s', path);
     return str;
   } catch(e) {}
@@ -197,20 +201,23 @@ Package.prototype.read = function *(path) {
   }
 
   var len = res.headers['content-length'];
-
   var body = '';
   var buf;
+  
 
   while (buf = yield req) {
     len -= buf.length;
     body += buf.toString();
   }
 
+
   // ensure downloaded matches the content-length
   if (len) throw this.error('incomplete download');
 
   body = JSON.parse(body);
   var content = new Buffer(body.content, 'base64').toString();
+
+  this.emit('read')
   this.debug('read remote copy of %s from %s', path, url);
 
   return content;
@@ -240,6 +247,7 @@ Package.prototype.fetch = function *() {
 
   // fetching
   this.emit('fetching');
+  this.debug('fetching');
 
   // don't fetch if it already exists
   if (yield fs.exists(dir)) {
@@ -248,35 +256,12 @@ Package.prototype.fetch = function *() {
     return this;
   }
 
-  this.debug('fetching');
-
+  // url and options for "request" and "decompress"
   var url = api + '/repos/' + this.repo + '/tarball/' + ref;
-  var opts = this.options(url);
-  var req = request(url, opts);
-  var res = yield req;
+  var opts = this.options(url, { extract: true, strip: 1 });
 
-  this.debug('got a response: %s', res.statusCode);
-
-  if (200 != res.statusCode) {
-    throw this.error(res.statusCode);
-  }
-
-  this.debug('streaming the body and extracting')
-
-  var len = res.headers['content-length'];
-  var extract = decompress({ ext: '.tar.gz', path: dir, strip: 1 });
-  var buf;
-
-  // write body to decompressor
-  while (buf = yield req) {
-    len -= buf.length;
-    yield write(extract, buf);
-  }
-
-  // ensure downloaded matches the content-length
-  if (len) throw this.error('incomplete download');
-
-  extract.end();
+  // download and extract the package
+  yield this.download(url, dir, opts);
 
   // fetched
   this.emit('fetch');
@@ -313,7 +298,6 @@ Package.prototype.authenticate = function *() {
       this.debug('%s: api not found in ~/netrc', api);
     }
   } catch(e) {
-    throw e
     this.debug('no ~/.netrc found');
   }
 
@@ -363,6 +347,22 @@ Package.prototype.debug = function(str) {
 Package.prototype.error = function(str) {
   return error('%s: %s', this.slug(), str);
 }
+
+/**
+ * Download the tarfile
+ *
+ * @param {String} url
+ * @param {String} dest
+ * @param {Object} opts
+ * @param {Function} fn
+ * @return {Package}
+ */
+
+Package.prototype.download = thunkify(function(url, dest, opts, fn) {
+  var dl = download(url, dest, opts);
+  dl.on('error', fn);
+  dl.on('close', fn);
+});
 
 /**
  * Return request options for `url`.
