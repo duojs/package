@@ -47,6 +47,14 @@ Package('matthewmueller/uid', '~0.1.0');
 
 authenticate with github. you can create a new token here: https://github.com/settings/tokens/new.
 
+if the `user` and `token` are not present, duo-package will try reading the authentication details from your `~/.netrc`. Here's an example:
+
+```
+machine api.github.com
+  login user
+  password token
+```
+
 ### Package#directory(dir)
 
 set a directory to install the package in.
@@ -58,6 +66,14 @@ read a file from github
 ```js
 var content = yield pkg.read('component.json');
 ```
+
+### Package.path([path])
+
+Get the path of the fetched package. optionally add a relative `path`.
+
+### Package.useragent([ua])
+
+Get or set the user agent header duo-package uses to make requests. defaults to `duo-package`.
 
 ### Package.fetch()
 
