@@ -1,4 +1,10 @@
 
+0.1.2 / 2014-05-29 
+==================
+
+ * optionally use the colon ex: Package('component:events')
+ * bump gh-resolve
+
 0.1.1 / 2014-05-29 
 ==================
 
