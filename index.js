@@ -58,7 +58,7 @@ var credentials = {};
 function Package(repo, ref) {
   if (!(this instanceof Package)) return new Package(repo, ref);
   Emitter.call(this);
-  this.repo = repo;
+  this.repo = repo.replace(':', '/');
   this.ref = ref || '*';
   this.ua = 'duo-package';
   this.dir = process.cwd();
@@ -139,7 +139,7 @@ Package.prototype.resolve = function *() {
   yield this.authenticate();
 
   // check if ref is in the cache
-  var key = this.repo + '@' + this.ref;
+  var slug = this.repo + '@' + this.ref;
   this.resolved = cached(this.repo, this.ref);
 
   // resolved
@@ -152,7 +152,7 @@ Package.prototype.resolve = function *() {
   try {
     this.emit('resolving');
     this.auth();
-    var ref = yield resolve(key, this.user, this.token);
+    var ref = yield resolve(slug, this.user, this.token);
   } catch (e) {
     throw error('%s: reference %s not found', this.slug(), this.ref);
   }
