@@ -3,16 +3,19 @@
  * Module dependencies
  */
 
+var debug = require('debug')('duo-package');
 var Emitter = require('events').EventEmitter;
 var decompress = require('decompress');
-var debug = require('debug')('duo-package');
+var error = require('better-error');
 var thunkify = require('thunkify');
 var resolve = thunkify(require('gh-resolve'));
+var netrc = require('netrc').parse;
 var request = require('co-req');
 var write = require('co-write');
 var semver = require('semver');
 var path = require('path');
 var fs = require('co-fs');
+var url = require('url');
 var gh = require('gh2');
 var join = path.join;
 
@@ -27,6 +30,12 @@ module.exports = Package;
  */
 
 var refs = {};
+
+/**
+ * Home directory
+ */
+
+var home = process.env.HOME || process.env.HOMEPATH;
 
 /**
  * API url
@@ -46,13 +55,13 @@ function Package(repo, ref) {
   if (!(this instanceof Package)) return new Package(repo, ref);
   Emitter.call(this);
   this.repo = repo;
-  this.ref = ref || 'master';
+  this.ref = ref || '*';
+  this.ua = 'duo-package';
   this.dir = process.cwd();
-  this.gh = new gh();
-  this.gh.user = Package.user || null;
-  this.gh.token = Package.token || null;
-  this.gh.lookup = thunkify(this.gh.lookup);
-  this.resolved = null;
+  this.user = Package.user || null;
+  this.token = Package.token || null;
+  this.resolved = false;
+  this.netrc = true;
 };
 
 /**
@@ -76,6 +85,31 @@ Package.prototype.directory = function(dir) {
 };
 
 /**
+ * Get the local directory path
+ *
+ * @return {String}
+ * @api public
+ */
+
+Package.prototype.path = function(path) {
+  path = path || '';
+  return join(this.dir, this.slug(), path);
+};
+
+/**
+ * Get or set the User-Agent
+ *
+ * @param {String} ua (optional)
+ * @return {Package|String}
+ */
+
+Package.prototype.useragent = function(ua) {
+  if (!ua) return this.ua;
+  this.ua = ua;
+  return this;
+};
+
+/**
  * Authenticate with github
  *
  * @param {String} user
@@ -85,8 +119,8 @@ Package.prototype.directory = function(dir) {
  */
 
 Package.prototype.auth = function(user, token) {
-  this.gh.user = user || Package.user;
-  this.gh.token = token || Package.token;
+  this.user = user || Package.user;
+  this.token = token || Package.token;
   return this;
 };
 
@@ -98,6 +132,9 @@ Package.prototype.auth = function(user, token) {
  */
 
 Package.prototype.resolve = function *() {
+  // try to authenticate;
+  yield this.authenticate();
+
   // check if ref is in the cache
   var key = this.repo + '@' + this.ref;
   this.resolved = cached(this.repo, this.ref);
@@ -111,13 +148,13 @@ Package.prototype.resolve = function *() {
   // resolve
   try {
     this.emit('resolving');
-    var ref = yield resolve(key, this.gh.user, this.gh.token);
+    var ref = yield resolve(key, this.user, this.token);
   } catch (e) {
     throw new Error(this.slug() + ': reference "' + this.ref + '" not found.')
   }
 
   // couldn't resolve
-  if (!ref) throw new Error(this.slug() + ': reference "' + this.ref + '" not found');
+  if (!ref) throw error('%s: reference %s not found', this.slug(), this.ref);
 
   // cache
   this.emit('resolve');
@@ -136,6 +173,8 @@ Package.prototype.resolve = function *() {
  */
 
 Package.prototype.read = function *(path) {
+  yield this.authenticate();
+
   var ref = this.resolved || (yield this.resolve());
 
   this.debug('reading %s', path);
@@ -149,7 +188,7 @@ Package.prototype.read = function *(path) {
 
   // fetch from github
   var url = api + '/repos/' + this.repo + '/contents/' + path + '?ref=' + ref;
-  var opts = this.gh.options(url, { json: true });
+  var opts = this.options(url, { json: true });
   var req = request(url, opts);
   var res = yield req;
 
@@ -194,6 +233,8 @@ Package.prototype.readLocal = function *(path) {
  */
 
 Package.prototype.fetch = function *() {
+  yield this.authenticate();
+
   var ref = this.resolved || (yield this.resolve());
   var dir = join(this.dir, this.slug());
 
@@ -203,13 +244,14 @@ Package.prototype.fetch = function *() {
   // don't fetch if it already exists
   if (yield fs.exists(dir)) {
     this.debug('already exists at %s', dir);
+    this.emit('fetch');
     return this;
   }
 
-  this.debug('fetching')
+  this.debug('fetching');
 
   var url = api + '/repos/' + this.repo + '/tarball/' + ref;
-  var opts = this.gh.options(url);
+  var opts = this.options(url);
   var req = request(url, opts);
   var res = yield req;
 
@@ -242,6 +284,43 @@ Package.prototype.fetch = function *() {
 
   return this;
 };
+
+/**
+ * Authenticate, if token and user
+ * are not already set, try to find
+ * user and token in ~/.netrc
+ *
+ * @return {Package}
+ * @api private
+ */
+
+Package.prototype.authenticate = function *() {
+  if (this.user && this.token) return this;
+  else if (!this.netrc) return this;
+
+  this.debug('reading from ~/.netrc');
+
+  try {
+    var content = yield fs.readFile(join(home, '.netrc'), 'utf8');
+    var host = url.parse(api).host;
+    var obj = netrc(content)[host];
+    
+    if (obj) {
+      if (obj.login) this.user = obj.login;
+      if (obj.password) this.token = obj.password;
+      this.debug('read auth details from ~/.netrc');
+    } else {
+      this.debug('%s: api not found in ~/netrc', api);
+    }
+  } catch(e) {
+    throw e
+    this.debug('no ~/.netrc found');
+  }
+
+  this.netrc = false;
+  return this;
+};
+
 
 /**
  * Get the slug
@@ -282,10 +361,39 @@ Package.prototype.debug = function(str) {
  */
 
 Package.prototype.error = function(str) {
-  var slug = this.slug();
-  str = slug + ': ' + str;
-  return new Error(str);
+  return error('%s: %s', this.slug(), str);
 }
+
+/**
+ * Return request options for `url`.
+ *
+ * @param {String} url
+ * @param {Object} [opts]
+ * @return {Object}
+ * @api private
+ */
+
+Package.prototype.options = function(url, other){
+  var token = this.token;
+  var user = this.user;
+  var pass = this.pass;
+
+  var opts = {
+    url: url,
+    headers: { 'User-Agent': this.ua }
+  };
+
+  if (other) {
+    for (var k in other) opts[k] = other[k];
+  }
+
+  if (token) opts.headers.Authorization = 'Bearer ' + token;
+  if (user && pass) opts.headers.Authorization = 'Basic ' + basic(user, pass);
+
+  return opts;
+};
+
+
 
 /**
  * Check if the given version `a` is equal to `b`.
