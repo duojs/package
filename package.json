@@ -1,6 +1,6 @@
 {
   "name": "duo-package",
-  "version": "0.0.10",
+  "version": "0.1.0",
   "description": "github package installer",
   "keywords": [],
   "author": "matt mueller <mattmuelle@gmail.com>",

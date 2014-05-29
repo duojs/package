@@ -1,4 +1,19 @@
 
+0.1.0 / 2014-05-29 
+==================
+
+ * bring in gh.options fn.
+ * add better errors.
+ * automatically pull in netrc details
+ * add #path([path])
+ * add "resolving" & "resolve" events, for logging
+ * .resolve() better error messages
+ * improve caching a bit
+ * dont replace slashes
+ * replace slashes with dashes on branch names
+ * add events
+ * update readme
+
 0.0.10 / 2014-04-08
 ==================
 
