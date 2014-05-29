@@ -8,6 +8,8 @@ A github package installer. Meant to be used with [duo](http://github.com/duojs/
 - semver support
 - flexible api
 - checks local before fetching remote
+- private repo support
+- automattic `~/netrc` detection
 
 ## Installation
 
