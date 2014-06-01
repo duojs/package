@@ -24,6 +24,12 @@ var join = path.join;
 module.exports = Package;
 
 /**
+ * Inflight
+ */
+
+var inflight = {};
+
+/**
  * Ref cache.
  */
 
@@ -65,6 +71,7 @@ function Package(repo, ref) {
   this.user = Package.user || credentials.user || null;
   this.token = Package.token || credentials.token || null;
   this.resolved = false;
+  this.setMaxListeners(Infinity);
 };
 
 /**
@@ -216,7 +223,6 @@ Package.prototype.read = function *(path) {
     body += buf.toString();
   }
 
-
   // ensure downloaded matches the content-length
   if (len) throw this.error('incomplete download');
 
@@ -249,18 +255,32 @@ Package.prototype.fetch = function *() {
   yield this.authenticate();
 
   var ref = this.resolved || (yield this.resolve());
-  var dir = join(this.dir, this.slug());
+  var dir = this.path();
+
+  // inflight
+  if (inflight[dir]) {
+    this.debug('inflight, waiting..');
+    var pkg = inflight[this.slug()];
+    var self = this;
+    yield thunkify(function(done){
+      pkg.once('fetch', done);
+    });
+    return this;
+  }
+
+  // don't fetch if it already exists
+  // TODO: remove, edge-case but .exists() can lie.
+  if (yield fs.exists(dir)) {
+    this.debug('already exists at %s', dir);
+    return this;
+  }
 
   // fetching
   this.emit('fetching');
   this.debug('fetching');
 
-  // don't fetch if it already exists
-  if (yield fs.exists(dir)) {
-    this.debug('already exists at %s', dir);
-    this.emit('fetch');
-    return this;
-  }
+  // inflight
+  inflight[dir] = this;
 
   // url and options for "request" and "decompress"
   var url = api + '/repos/' + this.repo + '/tarball/' + ref;
@@ -268,6 +288,9 @@ Package.prototype.fetch = function *() {
 
   // download and extract the package
   yield this.download(url, dir, opts);
+
+  // done
+  inflight[this.slug()] = null;
 
   // fetched
   this.emit('fetch');
