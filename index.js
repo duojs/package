@@ -5,16 +5,21 @@
 
 var debug = require('debug')('duo-package');
 var Emitter = require('events').EventEmitter;
+var read = require('fs').createReadStream;
 var thunkify = require('thunkify');
 var resolve = thunkify(require('gh-resolve'));
 var error = require('better-error');
 var download = require('download');
 var netrc = require('netrc').parse;
-var request = require('co-req');
+var Cache = require('duo-cache');
+var request = require('request');
 var semver = require('semver');
+var coreq = require('co-req');
 var path = require('path');
+var zlib = require('zlib');
 var fs = require('co-fs');
 var url = require('url');
+var tar = require('tar');
 var join = path.join;
 
 /**
@@ -30,7 +35,7 @@ module.exports = Package;
 var inflight = {};
 
 /**
- * Ref cache.
+ * Refs.
  */
 
 var refs = {};
@@ -40,6 +45,12 @@ var refs = {};
  */
 
 var home = process.env.HOME || process.env.HOMEPATH;
+
+/**
+ * Cache
+ */
+
+var cache = Package.cache = Cache(join(home, '.duo'));
 
 /**
  * API url
@@ -55,7 +66,7 @@ var credentials = {};
 
 /**
  * Initialize `Package`
- *
+ * 
  * @param {String} repo
  * @param {String} ref
  * @api public
@@ -147,7 +158,7 @@ Package.prototype.resolve = function *() {
 
   // check if ref is in the cache
   var slug = this.repo + '@' + this.ref;
-  this.resolved = cached(this.repo, this.ref);
+  this.resolved = this.resolved || cached(this.repo, this.ref);
 
   // resolved
   if (this.resolved) {
@@ -171,7 +182,6 @@ Package.prototype.resolve = function *() {
   this.emit('resolve');
   this.resolved = ref.name;
   (refs[this.repo] = refs[this.repo] || []).push(ref.name);
-  this.debug('add %s to cache', ref.name);
   return ref.name;
 };
 
@@ -206,7 +216,7 @@ Package.prototype.read = function *(path) {
   // fetch from github
   var url = api + '/repos/' + this.repo + '/contents/' + path + '?ref=' + ref;
   var opts = this.options(url, { json: true });
-  var req = request(url, opts);
+  var req = coreq(url, opts);
   var res = yield req;
 
   if (res.statusCode != 200 ) {
@@ -255,10 +265,20 @@ Package.prototype.fetch = function *() {
   yield this.authenticate();
 
   var ref = this.resolved || (yield this.resolve());
-  var dir = this.path();
+  var slug = this.slug();
+  var tarball = yield cache.lookup(slug);
+  var dest = this.path();
+
+  // try the global cache.
+  if (tarball) {
+    debug('got tarball from cache');
+    yield extract(tarball, dest);
+    this.emit('fetch');
+    return this;
+  }
 
   // inflight
-  if (inflight[dir]) {
+  if (inflight[dest]) {
     this.debug('inflight, waiting..');
     var pkg = inflight[this.slug()];
     var self = this;
@@ -270,8 +290,8 @@ Package.prototype.fetch = function *() {
 
   // don't fetch if it already exists
   // TODO: remove, edge-case but .exists() can lie.
-  if (yield fs.exists(dir)) {
-    this.debug('already exists at %s', dir);
+  if (yield fs.exists(dest)) {
+    this.debug('already exists at %s', dest);
     return this;
   }
 
@@ -280,17 +300,28 @@ Package.prototype.fetch = function *() {
   this.debug('fetching');
 
   // inflight
-  inflight[dir] = this;
+  inflight[dest] = this;
 
   // url and options for "request" and "decompress"
   var url = api + '/repos/' + this.repo + '/tarball/' + ref;
   var opts = this.options(url, { extract: true, strip: 1 });
 
-  // download and extract the package
-  yield this.download(url, dir, opts);
+  // tarball stream
+  tarball = request(url, opts);
 
-  // done
-  inflight[this.slug()] = null;
+  // cache
+  if (semver.valid(ref)) {
+    yield cache.add(slug, tarball);
+    this.debug('added to cache');
+  }
+
+  // done.
+  delete inflight[slug];
+
+  // extract to directory
+  var src = (yield cache.lookup(slug)) || tarball;
+  yield extract(src, dest);
+  this.debug('extract to %s', dest);
 
   // fetched
   this.emit('fetch');
@@ -413,38 +444,48 @@ Package.prototype.options = function(url, other){
   return opts;
 };
 
-
-
 /**
- * Check if the given version `a` is equal to `b`.
+ * Get a cached `repo`, `ref`.
  * 
- * @param {String} a
- * @param {String} b
- * @return {Boolean}
+ * @param {String} repo
+ * @param {String} ref
+ * @return {String}
  * @api private
  */
 
-function equals(a, b){
-  try {
-    return semver.satisfies(a, b) || a == b;
-  } catch (e) {
-    return a == b;
+function cached(repo, ref){
+  var revs = refs[repo] || [];
+  var ret;
+
+  for (var i = 0; i < revs.length; ++i) {
+    try {
+      ret = semver.satisfies(revs[i], ref);
+    } catch (e) {
+      if (revs[i] == ref) ret = revs[i];
+    }
   }
+
+  return ret;
 }
 
 /**
- * Check if the given `repo` with `version` is cached.
+ * Extract `src`, `dest`
  * 
- * @param {String} repo
- * @param {String} version
- * @return {String}
- * @api privae
+ * @param {String} src
+ * @param {String} dest
+ * @return {Function}
+ * @api private
  */
 
-function cached(repo, version){
-  var arr = refs[repo] || [];
+function extract(src, dest){
+  return function(done){
+    if ('string' == typeof src) src = read(src);
 
-  for (var i = 0; i < arr.length; ++i) {
-    if (equals(arr[i], version)) return arr[i];
-  }
+    src
+    .on('error', done)
+    .pipe(zlib.createGunzip())
+    .pipe(tar.Extract({ path: dest, strip: 1 }))
+    .on('error', done)
+    .on('end', done);
+  };
 }
