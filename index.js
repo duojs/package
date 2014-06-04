@@ -266,68 +266,60 @@ Package.prototype.fetch = function *() {
 
   var ref = this.resolved || (yield this.resolve());
   var slug = this.slug();
-  var tarball = yield cache.lookup(slug);
   var dest = this.path();
 
-  // try the global cache.
-  if (tarball) {
-    debug('got tarball from cache');
-    yield extract(tarball, dest);
-    this.emit('fetch');
+  // inflight
+  if (inflight[dest]) {
+    var pkg = inflight[dest];
+    if (pkg.fetched) return;
+    yield function(done){
+      pkg.once('fetch', done);
+    };
     return this;
   }
 
   // inflight
-  if (inflight[dest]) {
-    this.debug('inflight, waiting..');
-    var pkg = inflight[this.slug()];
-    var self = this;
-    yield thunkify(function(done){
-      pkg.once('fetch', done);
-    });
-    return this;
-  }
-
-  // don't fetch if it already exists
-  // TODO: remove, edge-case but .exists() can lie.
-  if (yield fs.exists(dest)) {
-    this.debug('already exists at %s', dest);
-    return this;
-  }
+  inflight[dest] = this;
 
   // fetching
   this.emit('fetching');
   this.debug('fetching');
 
-  // inflight
-  inflight[dest] = this;
-
   // url and options for "request" and "decompress"
   var url = api + '/repos/' + this.repo + '/tarball/' + ref;
-  var opts = this.options(url, { extract: true, strip: 1 });
+  var opts = this.options(url);
 
   // tarball stream
-  tarball = request(url, opts);
+  var remote = request(url, opts);
 
   // cache
   if (semver.valid(ref)) {
-    yield cache.add(slug, tarball);
-    this.debug('added to cache');
+    yield cache.add(slug, remote);
   }
 
-  // done.
-  delete inflight[slug];
-
   // extract to directory
-  var src = (yield cache.lookup(slug)) || tarball;
+  var local = yield cache.lookup(slug);
+  var src = local || remote;
   yield extract(src, dest);
   this.debug('extract to %s', dest);
 
   // fetched
   this.emit('fetch');
+  this.fetched = true;
   this.debug('fetched package');
 
   return this;
+};
+
+/**
+ * Check if the package exists.
+ * 
+ * @return {Boolean}
+ * @api private
+ */
+
+Package.prototype.exists = function*(){
+  return yield fs.exists(this.path());
 };
 
 /**
@@ -455,17 +447,14 @@ Package.prototype.options = function(url, other){
 
 function cached(repo, ref){
   var revs = refs[repo] || [];
-  var ret;
 
   for (var i = 0; i < revs.length; ++i) {
     try {
-      ret = semver.satisfies(revs[i], ref);
+      if (semver.satisfies(revs[i], ref)) return revs[i];
     } catch (e) {
-      if (revs[i] == ref) ret = revs[i];
+      if (revs[i] == ref) return revs[i];
     }
   }
-
-  return ret;
 }
 
 /**
@@ -484,6 +473,7 @@ function extract(src, dest){
     src
     .on('error', done)
     .pipe(zlib.createGunzip())
+    .on('error', done)
     .pipe(tar.Extract({ path: dest, strip: 1 }))
     .on('error', done)
     .on('end', done);
