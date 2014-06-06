@@ -167,13 +167,9 @@ Package.prototype.resolve = function *() {
   }
 
   // resolve
-  try {
-    this.emit('resolving');
-    this.auth();
-    var ref = yield resolve(slug, this.user, this.token);
-  } catch (e) {
-    throw error('%s: reference %s not found', this.slug(), this.ref);
-  }
+  this.emit('resolving');
+  this.auth();
+  var ref = yield resolve(slug, this.user, this.token);
 
   // couldn't resolve
   if (!ref) throw error('%s: reference %s not found', this.slug(), this.ref);
