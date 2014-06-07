@@ -6,13 +6,13 @@
 var debug = require('debug')('duo-package');
 var Emitter = require('events').EventEmitter;
 var read = require('fs').createReadStream;
-var thunkify = require('thunkify');
-var resolve = thunkify(require('gh-resolve'));
 var error = require('better-error');
+var resolve = require('gh-resolve');
 var download = require('download');
 var netrc = require('netrc').parse;
 var Cache = require('duo-cache');
 var request = require('request');
+var thunk = require('thunkify');
 var semver = require('semver');
 var coreq = require('co-req');
 var path = require('path');
@@ -29,6 +29,12 @@ var join = path.join;
  */
 
 module.exports = Package;
+
+/**
+ * Thunkify functions
+ */
+
+resolve = thunk(resolve);
 
 /**
  * Inflight
@@ -400,7 +406,7 @@ Package.prototype.error = function(str) {
  * @return {Package}
  */
 
-Package.prototype.download = thunkify(function(url, dest, opts, fn) {
+Package.prototype.download = thunk(function(url, dest, opts, fn) {
   var dl = download(url, dest, opts);
   dl.on('error', fn);
   dl.on('close', fn);
