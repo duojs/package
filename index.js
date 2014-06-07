@@ -49,7 +49,7 @@ var refs = {};
 var home = process.env.HOME || process.env.HOMEPATH;
 
 /**
- * Cache tarballs in "/tmp/duo"
+ * Cache tarballs in "$tmp/duo"
  */
 
 var cache = Package.cache = Cache(join(tmp, 'duo'));
