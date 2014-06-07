@@ -20,6 +20,8 @@ var zlib = require('zlib');
 var fs = require('co-fs');
 var url = require('url');
 var tar = require('tar');
+var os = require('os');
+var tmp = os.tmpdir();
 var join = path.join;
 
 /**
@@ -47,10 +49,10 @@ var refs = {};
 var home = process.env.HOME || process.env.HOMEPATH;
 
 /**
- * Cache
+ * Cache tarballs in "/tmp/duo"
  */
 
-var cache = Package.cache = Cache(join(home, '.duo'));
+var cache = Package.cache = Cache(join(tmp, 'duo'));
 
 /**
  * API url
@@ -81,8 +83,8 @@ function Package(repo, ref) {
   this.dir = process.cwd();
   this.user = Package.user || credentials.user || null;
   this.token = Package.token || credentials.token || null;
-  this.resolved = false;
   this.setMaxListeners(Infinity);
+  this.resolved = false;
 };
 
 /**
