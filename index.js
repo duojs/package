@@ -164,6 +164,12 @@ Package.prototype.resolve = function *() {
   // try to authenticate;
   yield this.authenticate();
 
+  // if it's a valid version
+  if (semver.valid(this.ref)) {
+    this.resolved = this.ref;
+    return this.resolved;
+  }
+
   // check if ref is in the cache
   var slug = this.repo + '@' + this.ref;
   this.resolved = this.resolved || cached(this.repo, this.ref);
