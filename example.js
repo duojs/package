@@ -7,7 +7,7 @@ var Package = require('./');
 var DEBUG = !! process.env.DEBUG;
 
 
-var a = new Package('component/emitter', '1.x')
+var a = new Package('component/emitter', '1.0.0')
   .directory('node_modules');
 
 var b = new Package('component/emitter', 'master')
@@ -29,6 +29,6 @@ co(function *() {
 function log(pkg, str){
   return function(){
     if (DEBUG) return;
-    console.log(str + ' : %s', pkg.slug());  
+    console.log(str + ' : %s', pkg.slug());
   };
 }
