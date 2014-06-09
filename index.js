@@ -74,7 +74,7 @@ var credentials = {};
 
 /**
  * Initialize `Package`
- * 
+ *
  * @param {String} repo
  * @param {String} ref
  * @api public
@@ -177,7 +177,7 @@ Package.prototype.resolve = function *() {
   // resolve
   this.emit('resolving');
   this.auth();
-  var ref = yield resolve(slug, this.user, this.token);
+  var ref = yield resolve(slug);
 
   // couldn't resolve
   if (!ref) throw error('%s: reference %s not found', this.slug(), this.ref);
@@ -195,7 +195,7 @@ Package.prototype.resolve = function *() {
  * TODO: either remove entirely, or
  * replace co-req with something else, or
  * fix random request dropping in co-req
- * 
+ *
  * @param {String} path
  * @param {String} content
  * @api public
@@ -230,7 +230,7 @@ Package.prototype.read = function *(path) {
   var len = res.headers['content-length'];
   var body = '';
   var buf;
-  
+
 
   while (buf = yield req) {
     len -= buf.length;
@@ -317,7 +317,7 @@ Package.prototype.fetch = function *() {
 
 /**
  * Check if the package exists.
- * 
+ *
  * @return {Boolean}
  * @api private
  */
@@ -442,7 +442,7 @@ Package.prototype.options = function(url, other){
 
 /**
  * Get a cached `repo`, `ref`.
- * 
+ *
  * @param {String} repo
  * @param {String} ref
  * @return {String}
@@ -463,7 +463,7 @@ function cached(repo, ref){
 
 /**
  * Extract `src`, `dest`
- * 
+ *
  * @param {String} src
  * @param {String} dest
  * @return {Function}
