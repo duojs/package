@@ -1,17 +1,34 @@
 
-0.1.2 / 2014-05-29 
+0.2.0 / 2014-06-10
+==================
+
+ * pin duo-cache
+ * Merge pull request #12 from component/perf/resolve
+ * perf: dont resolve when a valid semver is given as ref
+ * Merge pull request #11 from component/update/gh-resolve
+ * deps: update to gh-resolve@1.x
+ * depend on duo-cache master for now.
+ * cleanup thunkify
+ * update comment
+ * cache tarballs in /tmp/duo. fixes: #8
+ * let gh-resolve throw descriptive error
+ * remove fs.exists() usage in parallel .fetch() to prevent race conditions
+ * add: duo-cache
+ * fix: handle inflight requests
+
+0.1.2 / 2014-05-29
 ==================
 
  * optionally use the colon ex: Package('component:events')
  * bump gh-resolve
 
-0.1.1 / 2014-05-29 
+0.1.1 / 2014-05-29
 ==================
 
  * only check .netrc once
  * fetch using 'download' instead of 'co-req'. fixes inconsistent dropped requests and half downloaded packages
 
-0.1.0 / 2014-05-29 
+0.1.0 / 2014-05-29
 ==================
 
  * bring in gh.options fn.
