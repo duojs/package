@@ -11,6 +11,7 @@ var resolve = require('gh-resolve');
 var download = require('download');
 var netrc = require('netrc').parse;
 var Cache = require('duo-cache');
+var enstore = require('enstore');
 var request = require('request');
 var thunk = require('thunkify');
 var semver = require('semver');
@@ -304,16 +305,20 @@ Package.prototype.fetch = function *() {
   var opts = this.options(url);
 
   // tarball stream
+  var store = enstore();
   var remote = request(url, opts);
+
+  // store
+  remote.pipe(store.createWriteStream());
 
   // cache
   if (semver.valid(ref)) {
-    yield cache.add(slug, remote);
+    yield cache.add(slug, store.createReadStream());
   }
 
   // extract to directory
   var local = yield cache.lookup(slug);
-  var src = local || remote;
+  var src = local || store.createReadStream();
   yield extract(src, dest);
   this.debug('extract to %s', dest);
 
