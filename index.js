@@ -168,7 +168,8 @@ Package.prototype.resolve = function *() {
   yield this.authenticate();
 
   // if it's a valid version
-  if (semver.valid(this.ref)) {
+  // or invalid range, no need to resolve.
+  if (semver.valid(this.ref) || !semver.validRange(this.ref)) {
     this.resolved = this.ref;
     return this.resolved;
   }
