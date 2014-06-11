@@ -1,4 +1,10 @@
 
+0.2.2 / 2014-06-11
+==================
+
+ * perf: no need to resolve branches
+ * resolve: use gh api to resolve semver, makes it a lot easier to test on travis
+
 0.2.1 / 2014-06-11
 ==================
 
