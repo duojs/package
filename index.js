@@ -70,7 +70,10 @@ var api = 'https://api.github.com';
  * credentials from ~/.netrc
  */
 
-var credentials = {};
+var credentials = {
+  user: process.env.GH_USER,
+  token: process.env.GH_TOKEN
+};
 
 /**
  * Initialize `Package`
