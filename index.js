@@ -186,7 +186,7 @@ Package.prototype.resolve = function *() {
   // resolve
   this.emit('resolving');
   this.auth();
-  var ref = yield resolve(slug);
+  var ref = yield resolve(slug, this.user, this.token);
 
   // couldn't resolve
   if (!ref) throw error('%s: reference %s not found', this.slug(), this.ref);
