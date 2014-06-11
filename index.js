@@ -168,7 +168,8 @@ Package.prototype.resolve = function *() {
   yield this.authenticate();
 
   // if it's a valid version
-  if (semver.valid(this.ref)) {
+  // or invalid range, no need to resolve.
+  if (semver.valid(this.ref) || !semver.validRange(this.ref)) {
     this.resolved = this.ref;
     return this.resolved;
   }
@@ -186,7 +187,7 @@ Package.prototype.resolve = function *() {
   // resolve
   this.emit('resolving');
   this.auth();
-  var ref = yield resolve(slug);
+  var ref = yield resolve(slug, this.user, this.token);
 
   // couldn't resolve
   if (!ref) throw error('%s: reference %s not found', this.slug(), this.ref);

@@ -13,14 +13,17 @@ var a = new Package('component/emitter', '1.0.0')
 var b = new Package('component/emitter', 'master')
   .directory('node_modules');
 
+var c = new Package('component/emitter', '*')
+  .directory('node_modules');
+
 
 co(function *() {
-  yield [a, b].map(function*(pkg){
+  yield [a, b, c].map(function(pkg){
     pkg.on('resolving', log(pkg, 'resolving'));
     pkg.on('resolve', log(pkg, 'resolved'));
     pkg.on('fetching', log(pkg, 'fetching'));
     pkg.on('fetch', log(pkg, 'fetched'));
-    yield pkg.fetch();
+    return pkg.fetch();
   });
 })(function(err, pkg) {
   if (err) throw err;
