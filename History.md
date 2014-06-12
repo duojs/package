@@ -1,4 +1,10 @@
 
+0.2.3 / 2014-06-12
+==================
+
+ * fix: cannot pipe after "data" has been emitted
+ * add some tests
+
 0.2.2 / 2014-06-11
 ==================
 
