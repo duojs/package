@@ -6,9 +6,7 @@
 var debug = require('debug')('duo-package');
 var Emitter = require('events').EventEmitter;
 var read = require('fs').createReadStream;
-var error = require('better-error');
 var resolve = require('gh-resolve');
-var download = require('download');
 var netrc = require('netrc').parse;
 var Cache = require('duo-cache');
 var enstore = require('enstore');
@@ -408,24 +406,8 @@ Package.prototype.debug = function(str) {
  */
 
 Package.prototype.error = function(str) {
-  return error('%s: %s', this.slug(), str);
-}
-
-/**
- * Download the tarfile
- *
- * @param {String} url
- * @param {String} dest
- * @param {Object} opts
- * @param {Function} fn
- * @return {Package}
- */
-
-Package.prototype.download = thunk(function(url, dest, opts, fn) {
-  var dl = download(url, dest, opts);
-  dl.on('error', fn);
-  dl.on('close', fn);
-});
+  return new Error('%s: %s', this.slug(), str);
+};
 
 /**
  * Return request options for `url`.
