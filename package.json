@@ -9,11 +9,9 @@
     "url": "git://github.com/matthewmueller/duo-package.git"
   },
   "dependencies": {
-    "better-error": "0.0.2",
     "co-fs": "^1.2.0",
     "co-req": "0.0.4",
     "debug": "^0.8.0",
-    "download": "~0.1.17",
     "duo-cache": "1.x",
     "enstore": "0.0.2",
     "gh-resolve": "0.1.5",
