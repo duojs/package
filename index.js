@@ -496,16 +496,11 @@ function extract(src, dest){
       : src;
 
     stream
-    .on('error', error)
+    .on('error', done)
     .pipe(zlib.createGunzip())
-    .on('error', error)
+    .on('error', done)
     .pipe(tar.Extract({ path: dest, strip: 1 }))
-    .on('error', error)
+    .on('error', done)
     .on('end', done);
-
-    function error(err){
-      console.log(require('fs').statSync(src));
-      done(err);
-    }
   };
 }
