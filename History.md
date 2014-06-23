@@ -1,4 +1,10 @@
 
+0.2.5 / 2014-06-23 
+==================
+
+ * bump gh-resolve
+ * speed up require by removing download and better-error packages
+
 0.2.4 / 2014-06-12
 ==================
 
