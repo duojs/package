@@ -32,4 +32,18 @@ describe('duo-package', function(){
     assert(exists(__dirname + '/tmp/component-type@master/component.json'));
     assert(exists(__dirname + '/tmp/component-emitter@master/component.json'));
   })
+
+  it('should error when package is not found', function*(){
+    var pkg = Package('component/404', '1.0.0');
+    pkg.directory(__dirname + '/tmp');
+    var msg;
+
+    try {
+      yield pkg.fetch();
+    } catch (e) {
+      msg = e.message;
+    }
+
+    assert.equal('component-404@1.0.0: github 404 error', msg);
+  })
 })

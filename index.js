@@ -8,6 +8,7 @@ var Emitter = require('events').EventEmitter;
 var read = require('fs').createReadStream;
 var resolve = require('gh-resolve');
 var netrc = require('netrc').parse;
+var fmt = require('util').format;
 var Cache = require('duo-cache');
 var enstore = require('enstore');
 var request = require('request');
@@ -306,6 +307,16 @@ Package.prototype.fetch = function *() {
   var store = enstore();
   var remote = request(url, opts);
 
+  // get the status code.
+  var status = yield function(done){
+    remote.on('error', done);
+    remote.on('response', function(res){
+      done(null, res.statusCode);
+    });
+  };
+
+  if (4 <= status / 100 | 0) throw this.error('github %s error', status);
+
   // store
   remote.pipe(store.createWriteStream());
 
@@ -405,8 +416,10 @@ Package.prototype.debug = function(str) {
  * @api public
  */
 
-Package.prototype.error = function(str) {
-  return new Error('%s: %s', this.slug(), str);
+Package.prototype.error = function(msg) {
+  var msg = this.slug() + ': ' + msg;
+  var args = [].slice.call(arguments, 1);
+  return new Error(fmt.apply(null, [msg].concat(args)));
 };
 
 /**
