@@ -302,33 +302,42 @@ Package.prototype.fetch = function *() {
   // url and options for "request" and "decompress"
   var url = api + '/repos/' + this.repo + '/tarball/' + ref;
   var opts = this.options(url);
+  var cached;
+
+  // if it exists in the cache extract it.
+  if (cached = yield cache.lookup(slug)) {
+    yield extract(cached, dest);
+    this.emit('fetch');
+    this.fetched = true;
+    this.debug('fetched from cache');
+    return this;
+  }
 
   // tarball stream
   var store = enstore();
   var remote = request(url, opts);
 
   // get the status code.
-  var status = yield function(done){
+  var res = yield function(done){
     remote.on('error', done);
     remote.on('response', function(res){
-      done(null, res.statusCode);
+      done(null, res);
     });
   };
 
-  if (4 <= status / 100 | 0) throw this.error('github %s error', status);
+  var status = res.statusCode / 100 | 0;
+  if (4 <= status) throw this.error('github %s error', res.statusCode);
 
   // store
-  remote.pipe(store.createWriteStream());
+  res.pipe(store.createWriteStream());
 
-  // cache
+  // cache if it's a valid semver
   if (semver.valid(ref)) {
     yield cache.add(slug, store.createReadStream());
   }
 
   // extract to directory
-  var local = yield cache.lookup(slug);
-  var src = local || store.createReadStream();
-  yield extract(src, dest);
+  yield extract(store.createReadStream(), dest);
   this.debug('extract to %s', dest);
 
   // fetched
@@ -482,14 +491,21 @@ function cached(repo, ref){
 
 function extract(src, dest){
   return function(done){
-    if ('string' == typeof src) src = read(src);
+    var stream = 'string' == typeof src
+      ? read(src)
+      : src;
 
-    src
-    .on('error', done)
+    stream
+    .on('error', error)
     .pipe(zlib.createGunzip())
-    .on('error', done)
+    .on('error', error)
     .pipe(tar.Extract({ path: dest, strip: 1 }))
-    .on('error', done)
+    .on('error', error)
     .on('end', done);
+
+    function error(err){
+      console.log(require('fs').statSync(src));
+      done(err);
+    }
   };
 }
