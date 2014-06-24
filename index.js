@@ -306,7 +306,7 @@ Package.prototype.fetch = function *() {
 
   // if it exists in the cache extract it.
   if (cached = yield cache.lookup(slug)) {
-    yield extract(cached, dest);
+    yield extract(cached, dest, slug);
     this.emit('fetch');
     this.fetched = true;
     this.debug('fetched from cache');
@@ -317,19 +317,8 @@ Package.prototype.fetch = function *() {
   var store = enstore();
   var remote = request(url, opts);
 
-  // get the status code.
-  var res = yield function(done){
-    remote.on('error', done);
-    remote.on('response', function(res){
-      done(null, res);
-    });
-  };
-
-  var status = res.statusCode / 100 | 0;
-  if (4 <= status) throw this.error('github %s error', res.statusCode);
-
   // store
-  res.pipe(store.createWriteStream());
+  remote.pipe(store.createWriteStream());
 
   // cache if it's a valid semver
   if (semver.valid(ref)) {
@@ -337,7 +326,7 @@ Package.prototype.fetch = function *() {
   }
 
   // extract to directory
-  yield extract(store.createReadStream(), dest);
+  yield extract(store.createReadStream(), dest, slug);
   this.debug('extract to %s', dest);
 
   // fetched
@@ -485,22 +474,27 @@ function cached(repo, ref){
  *
  * @param {String} src
  * @param {String} dest
+ * @param {String} repo
  * @return {Function}
  * @api private
  */
 
-function extract(src, dest){
+function extract(src, dest, repo){
   return function(done){
     var stream = 'string' == typeof src
       ? read(src)
       : src;
 
     stream
-    .on('error', done)
+    .on('error', error)
     .pipe(zlib.createGunzip())
-    .on('error', done)
+    .on('error', error)
     .pipe(tar.Extract({ path: dest, strip: 1 }))
-    .on('error', done)
+    .on('error', error)
     .on('end', done);
+
+    function error(err){
+      done(new Error(repo + ': ' + err.message));
+    }
   };
 }

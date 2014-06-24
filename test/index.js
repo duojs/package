@@ -44,6 +44,6 @@ describe('duo-package', function(){
       msg = e.message;
     }
 
-    assert.equal('component-404@1.0.0: github 404 error', msg);
+    assert.equal('component-404@1.0.0: incorrect header check', msg);
   })
 })
