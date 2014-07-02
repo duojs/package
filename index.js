@@ -7,7 +7,7 @@ var debug = require('debug')('duo-package');
 var Emitter = require('events').EventEmitter;
 var read = require('fs').createReadStream;
 var resolve = require('gh-resolve');
-var netrc = require('netrc').parse;
+var netrc = require('node-netrc');
 var fmt = require('util').format;
 var Cache = require('duo-cache');
 var enstore = require('enstore');
@@ -22,6 +22,7 @@ var url = require('url');
 var tar = require('tar');
 var os = require('os');
 var tmp = os.tmpdir();
+var env = process.env;
 var join = path.join;
 
 /**
@@ -67,13 +68,15 @@ var cache = Package.cache = Cache(join(tmp, 'duo'));
 var api = 'https://api.github.com';
 
 /**
- * credentials from ~/.netrc
+ * auth from ~/.netrc
  */
 
-var credentials = {
-  user: process.env.GH_USER,
-  token: process.env.GH_TOKEN
-};
+var auth = netrc('api.github.com') || {};
+
+// logging
+auth.login && auth.password
+  ? debug('read auth details from ~/.netrc')
+  : debug('could not read auth details from ~/.netrc')
 
 /**
  * Initialize `Package`
@@ -90,8 +93,8 @@ function Package(repo, ref) {
   this.ref = ref || '*';
   this.ua = 'duo-package';
   this.dir = process.cwd();
-  this.user = Package.user || credentials.user || null;
-  this.token = Package.token || credentials.token || null;
+  this.user = auth.login || null;
+  this.token = auth.password || null;
   this.setMaxListeners(Infinity);
   this.resolved = false;
 };
@@ -151,8 +154,8 @@ Package.prototype.useragent = function(ua) {
  */
 
 Package.prototype.auth = function(user, token) {
-  this.user = user || this.user || Package.user || credentials.user;
-  this.token = token || this.token || Package.token || credentials.token;
+  this.user = user || this.user;
+  this.token = token || this.token;
   return this;
 };
 
@@ -164,8 +167,6 @@ Package.prototype.auth = function(user, token) {
  */
 
 Package.prototype.resolve = function *() {
-  // try to authenticate;
-  yield this.authenticate();
 
   // if it's a valid version
   // or invalid range, no need to resolve.
@@ -186,7 +187,6 @@ Package.prototype.resolve = function *() {
 
   // resolve
   this.emit('resolving');
-  this.auth();
   var ref = yield resolve(slug, this.user, this.token);
 
   // couldn't resolve
@@ -212,8 +212,6 @@ Package.prototype.resolve = function *() {
  */
 
 Package.prototype.read = function *(path) {
-  yield this.authenticate();
-
   var ref = this.resolved || (yield this.resolve());
 
   this.emit('reading');
@@ -276,8 +274,6 @@ Package.prototype.readLocal = function *(path) {
  */
 
 Package.prototype.fetch = function *() {
-  yield this.authenticate();
-
   var ref = this.resolved || (yield this.resolve());
   var slug = this.slug();
   var dest = this.path();
@@ -349,34 +345,6 @@ Package.prototype.exists = function*(){
 };
 
 /**
- * Authenticate, if token and user
- * are not already set, try to find
- * user and token in ~/.netrc
- *
- * @return {Package}
- * @api private
- */
-
-Package.prototype.authenticate = function *() {
-  if (this.user && this.token) return this;
-  else if (credentials.user || credentials.token) return this;
-
-  this.debug('reading from ~/.netrc');
-
-  try {
-    var content = yield fs.readFile(join(home, '.netrc'), 'utf8');
-    var host = url.parse(api).host;
-    var obj = netrc(content)[host];
-    credentials.user = obj.login;
-    credentials.token = obj.password;
-    this.debug('read auth details from ~/.netrc');
-  } catch(e) {
-    this.debug('no ~/.netrc found');
-  }
-};
-
-
-/**
  * Get the slug
  *
  * @return {String}
@@ -430,7 +398,6 @@ Package.prototype.error = function(msg) {
  */
 
 Package.prototype.options = function(url, other){
-  this.auth();
   var token = this.token;
   var user = this.user;
 
