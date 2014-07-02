@@ -22,7 +22,6 @@ var url = require('url');
 var tar = require('tar');
 var os = require('os');
 var tmp = os.tmpdir();
-var env = process.env;
 var join = path.join;
 
 /**
