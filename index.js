@@ -70,7 +70,10 @@ var api = 'https://api.github.com';
  * auth from ~/.netrc
  */
 
-var auth = netrc('api.github.com') || {};
+var auth = netrc('api.github.com') || {
+  login: process.env.GH_USER,
+  password: process.env.GH_TOKEN
+};
 
 // logging
 auth.login && auth.password
