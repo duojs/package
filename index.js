@@ -75,7 +75,10 @@ var auth = netrc('api.github.com') || {
   password: process.env.GH_TOKEN
 };
 
-// logging
+/**
+ * Logging
+ */
+
 auth.login && auth.password
   ? debug('read auth details from ~/.netrc')
   : debug('could not read auth details from ~/.netrc')
@@ -129,8 +132,7 @@ Package.prototype.directory = function(dir) {
  */
 
 Package.prototype.path = function(path) {
-  path = path || '';
-  return join(this.dir, this.slug(), path);
+  return join(this.dir, this.slug(), path || '');
 };
 
 /**
@@ -391,7 +393,7 @@ Package.prototype.slug = function() {
 Package.prototype.debug = function(str) {
   var args = [].slice.call(arguments, 1);
   var slug = this.slug();
-  str = slug + ': ' + str;
+  str = fmt('%s: %s', slug, str);
   debug.apply(debug, [str].concat(args));
   return this;
 };
