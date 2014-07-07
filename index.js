@@ -162,6 +162,22 @@ Package.prototype.auth = function(user, token) {
 };
 
 /**
+ * Authenticated ?
+ *
+ * @api private
+ */
+
+Package.prototype.authenticated = function(){
+  var auth = this.user && this.token;
+  if (auth) return;
+  throw new Error([
+    'Github authentication error:',
+    'make sure you have ~/.netrc or',
+    'specify $GH_USER=<user> $GH_TOKEN=<token>.'
+  ].join(' '));
+};
+
+/**
  * Resolve the reference on github
  *
  * @return {String}
@@ -169,6 +185,7 @@ Package.prototype.auth = function(user, token) {
  */
 
 Package.prototype.resolve = function *() {
+  this.authenticated();
 
   // if it's a valid version
   // or invalid range, no need to resolve.
@@ -276,6 +293,9 @@ Package.prototype.readLocal = function *(path) {
  */
 
 Package.prototype.fetch = function *() {
+  this.authenticated();
+
+  // resolve
   var ref = this.resolved || (yield this.resolve());
   var slug = this.slug();
   var dest = this.path();
