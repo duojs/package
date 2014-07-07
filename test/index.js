@@ -46,4 +46,31 @@ describe('duo-package', function(){
 
     assert.equal('component-404@1.0.0: incorrect header check', msg);
   })
+
+  it('should throw an error when auth isnt set', function*(){
+    var pkg = Package('component/type', '1.0.0');
+    var a, b;
+
+    pkg.user = null;
+    pkg.token = null;
+
+    try {
+      yield pkg.fetch();
+    } catch (e) {
+      a = e.message
+    }
+
+    try {
+      yield pkg.resolve();
+    } catch (e) {
+      b = e.message;
+    }
+
+    assert.equal(a, b);
+    assert.equal(a, [
+      'Github authentication error:',
+      'make sure you have ~/.netrc or',
+      'specify $GH_USER=<user> $GH_TOKEN=<token>.'
+    ].join(' '));
+  })
 })
