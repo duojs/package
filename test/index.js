@@ -44,7 +44,7 @@ describe('duo-package', function(){
       msg = e.message;
     }
 
-    assert.equal('component-404@1.0.0: github response status:404 content-type:application/json; charset=utf-8', msg);
+    assert.equal('component-404@1.0.0: incorrect header check', msg);
   })
 
   it('should throw an error when auth isnt set', function*(){
