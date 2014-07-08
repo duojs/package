@@ -355,17 +355,21 @@ Package.prototype.fetch = function *() {
   var a = new PassThrough;
   var b = new PassThrough;
 
+  // gens
+  var gens = [];
+
   // pipe
   remote.pipe(a);
   remote.pipe(b);
 
   // cache if it's a valid semver
   if (semver.valid(ref)) {
-    yield cache.add(slug, a);
+    gens.push(cache.add(slug, a));
   }
 
   // extract to directory
-  yield extract(b, dest, slug);
+  gens.push(extract(b, dest, slug));
+  yield gens;
   this.debug('extract to %s', dest);
 
   // fetched
