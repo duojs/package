@@ -73,4 +73,11 @@ describe('duo-package', function(){
       'specify $GH_USER=<user> $GH_TOKEN=<token>.'
     ].join(' '));
   })
+
+  it('should work with bootstrap', function *() {
+    var pkg = Package('twbs/bootstrap', 'v3.2.0');
+    pkg.directory(__dirname + '/tmp');
+    yield pkg.fetch();
+    assert(exists(__dirname + '/tmp/twbs-bootstrap@v3.2.0/component.json'));
+  })
 })
