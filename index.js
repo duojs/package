@@ -3,6 +3,7 @@
  * Module dependencies
  */
 
+var PassThrough = require('stream').PassThrough;
 var debug = require('debug')('duo-package');
 var Emitter = require('events').EventEmitter;
 var read = require('fs').createReadStream;
@@ -10,7 +11,6 @@ var resolve = require('gh-resolve');
 var netrc = require('node-netrc');
 var fmt = require('util').format;
 var Cache = require('duo-cache');
-var enstore = require('enstore');
 var request = require('request');
 var thunk = require('thunkify');
 var semver = require('semver');
@@ -299,6 +299,7 @@ Package.prototype.fetch = function *() {
   var ref = this.resolved || (yield this.resolve());
   var slug = this.slug();
   var dest = this.path();
+  var self = this;
 
   // inflight
   if (inflight[dest]) {
@@ -331,20 +332,40 @@ Package.prototype.fetch = function *() {
     return this;
   }
 
-  // tarball stream
-  var store = enstore();
-  var remote = request(url, opts);
+  // grab tarball stream.
+  var remote = yield function(done){
+    var req = request(url, opts);
+    req.on('error', done);
+    req.on('response', function(res){
+      var type = res.headers['content-type'];
+      var status = res.statusCode;
+      self.debug('got %s - %s', status, type);
+
+      // error
+      if (2 < status / 100 | 0) {
+        done(self.error('github response status:%s content-type:%s', status, type));
+        return;
+      }
+
+      done(null, res);
+    });
+  };
 
   // store
-  remote.pipe(store.createWriteStream());
+  var a = new PassThrough;
+  var b = new PassThrough;
+
+  // pipe
+  remote.pipe(a);
+  remote.pipe(b);
 
   // cache if it's a valid semver
   if (semver.valid(ref)) {
-    yield cache.add(slug, store.createReadStream());
+    yield cache.add(slug, a);
   }
 
   // extract to directory
-  yield extract(store.createReadStream(), dest, slug);
+  yield extract(b, dest, slug);
   this.debug('extract to %s', dest);
 
   // fetched
@@ -483,7 +504,9 @@ function extract(src, dest, repo){
     .on('end', done);
 
     function error(err){
-      done(new Error(repo + ': ' + err.message));
+      var msg = err.message;
+      if ('incorrect header check' == msg) msg = 'corrupt tar.gz file';
+      done(new Error(repo + ': ' + msg));
     }
   };
 }

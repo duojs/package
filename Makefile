@@ -1,5 +1,5 @@
 
-test: node_modules
+test:
 	@node_modules/.bin/mocha \
 		--reporter spec \
 		--require co-mocha \
@@ -8,5 +8,8 @@ test: node_modules
 
 node_modules: package.json
 	@npm i
+
+clean-cache:
+	rm -r $(TMPDIR)/duo
 
 .PHONY: test
