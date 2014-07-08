@@ -1,4 +1,16 @@
 
+n.n.n / 2014-07-08 
+==================
+
+ * Merge pull request #29 from component/fix/request
+ * stream fixes
+ * Release 0.2.11
+ * Merge pull request #28 from component/add/auth-error
+ * add auth error
+ * Release 0.2.10
+ * Merge pull request #25 from component/add/env-auth
+ * duo-package: add env auth back
+
 0.2.11 / 2014-07-08
 ==================
 
