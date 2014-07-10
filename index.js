@@ -379,6 +379,7 @@ Package.prototype.download = function(opts) {
     req.on('error', error);
 
     store.on('end', function() {
+      process.off('SIGINT', abort);
       return fn(null, store);
     });
 
@@ -409,10 +410,14 @@ Package.prototype.download = function(opts) {
       req.pipe(zlib.createGunzip())
         .on('error', error)
         .pipe(gzip);
-
-      // abort if there's an interruption
-      process.on('SIGINT', function() { req.abort(); })
     });
+
+    // abort if there's an interruption
+    process.once('SIGINT', abort);
+
+    function abort() {
+      req.abort();
+    }
 
     function error(err) {
       return fn(self.error(err));
