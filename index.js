@@ -195,6 +195,7 @@ Package.prototype.resolve = function *() {
   // if it's a valid version
   // or invalid range, no need to resolve.
   if (semver.valid(this.ref) || !semver.validRange(this.ref)) {
+    this.debug('don\'t need to resolve %s', this.ref);
     this.resolved = this.ref;
     return this.resolved;
   }
@@ -205,21 +206,26 @@ Package.prototype.resolve = function *() {
 
   // resolved
   if (this.resolved) {
-    this.debug('got %s from cache', this.resolved);
+    this.debug('resolved from cache %s', this.resolved);
     return this.resolved;
   }
 
-  // resolve
+  // resolving
   this.emit('resolving');
+  this.debug('resolving');
+
+  // resolve
   var ref = yield resolve(slug, this.user, this.token);
 
   // couldn't resolve
   if (!ref) throw error('%s: reference %s not found', this.slug(), this.ref);
 
-  // cache
+  // resolved
   this.emit('resolve');
+  this.debug('resolved');
   this.resolved = ref.name;
   (refs[this.repo] = refs[this.repo] || []).push(ref.name);
+
   return ref.name;
 };
 
