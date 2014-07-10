@@ -1,4 +1,10 @@
 
+0.3.1 / 2014-07-11
+==================
+
+ * fix event removal
+ * more debug statements while resolving
+
 0.3.0 / 2014-07-11
 ==================
 
