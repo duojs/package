@@ -1,4 +1,13 @@
 
+0.3.0 / 2014-07-11
+==================
+
+ * test zlib extraction before writing tarball to cache
+ * checks if pkg already exists.
+ * added progress events
+ * remove duo-cache
+ * much more reliable downloads
+
 0.2.13 / 2014-07-08
 ==================
 
