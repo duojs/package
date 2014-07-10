@@ -1,5 +1,5 @@
 
-var exists = require('co-fs').exists;
+var exists = require('fs').existsSync;
 var mkdirp = require('mkdirp').sync;
 var rimraf = require('rimraf').sync;
 var assert = require('assert');
@@ -33,7 +33,7 @@ describe('duo-package', function(){
     assert(exists(__dirname + '/tmp/component-emitter@master/component.json'));
   })
 
-  it('should error when package is not found', function*(){
+  it('should error when package is not found (404)', function*(){
     var pkg = Package('component/404', '1.0.0');
     pkg.directory(__dirname + '/tmp');
     var msg;
@@ -44,7 +44,7 @@ describe('duo-package', function(){
       msg = e.message;
     }
 
-    assert.equal('component-404@1.0.0: incorrect header check', msg);
+    assert.equal('component-404@1.0.0: returned with status code: 404', msg);
   })
 
   it('should throw an error when auth isnt set', function*(){
@@ -68,6 +68,7 @@ describe('duo-package', function(){
 
     assert.equal(a, b);
     assert.equal(a, [
+      'component-type@1.0.0:',
       'Github authentication error:',
       'make sure you have ~/.netrc or',
       'specify $GH_USER=<user> $GH_TOKEN=<token>.'
@@ -75,9 +76,23 @@ describe('duo-package', function(){
   })
 
   it('should work with bootstrap', function *() {
+    this.timeout(60000);
     var pkg = Package('twbs/bootstrap', 'v3.2.0');
     pkg.directory(__dirname + '/tmp');
     yield pkg.fetch();
-    assert(exists(__dirname + '/tmp/twbs-bootstrap@v3.2.0/component.json'));
+    assert(exists(__dirname + '/tmp/twbs-bootstrap@v3.2.0/package.json'));
+  })
+
+  it('should handle inflight requests', function *() {
+    var a = Package('component/tip', '1.x');
+    var b = Package('component/tip', '1.x');
+    var c = Package('component/tip', '1.x');
+    var d = Package('component/tip', '1.x');
+    a.directory(__dirname + '/tmp');
+    b.directory(__dirname + '/tmp');
+    c.directory(__dirname + '/tmp');
+    d.directory(__dirname + '/tmp');
+    yield [a.fetch(), b.fetch(), c.fetch(), d.fetch()];
+    assert(exists(__dirname + '/tmp/component-tip@1.0.3/component.json'));
   })
 })
