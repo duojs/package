@@ -165,19 +165,6 @@ Package.prototype.auth = function(user, token) {
   return this;
 };
 
-
-/**
- * Lookup in cache
- *
- * @param {Boolean} cache
- */
-
-Package.prototype.cache = function(cache) {
-  this.checkcache = cache == undefined ? true : cache;
-  return this;
-};
-
-
 /**
  * Ensure we're authenticated
  *
