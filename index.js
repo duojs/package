@@ -221,10 +221,10 @@ Package.prototype.resolve = function *() {
   if (!ref) throw error('%s: reference %s not found', this.slug(), this.ref);
 
   // resolved
-  this.emit('resolve');
-  this.debug('resolved');
   this.resolved = ref.name;
   (refs[this.repo] = refs[this.repo] || []).push(ref.name);
+  this.debug('resolved');
+  this.emit('resolve');
 
   return ref.name;
 };
