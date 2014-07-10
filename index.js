@@ -262,7 +262,7 @@ Package.prototype.fetch = function *(opts) {
     yield function(done){ pkg.once('fetch', done); }
   }
 
-  // inflight
+  // set package as inflight
   inflight[dest] = this;
 
   // check if directory already exists
