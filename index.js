@@ -5,23 +5,22 @@
 
 var debug = require('debug')('duo-package');
 var Emitter = require('events').EventEmitter;
+var write = require('fs').createWriteStream;
 var read = require('fs').createReadStream;
 var resolve = require('gh-resolve');
+var mkdir = require('mkdirp').sync;
 var netrc = require('node-netrc');
 var fmt = require('util').format;
-var Cache = require('duo-cache');
 var enstore = require('enstore');
 var request = require('request');
+var tmp = require('os').tmpdir();
 var thunk = require('thunkify');
 var semver = require('semver');
-var coreq = require('co-req');
 var path = require('path');
 var zlib = require('zlib');
 var fs = require('co-fs');
 var url = require('url');
 var tar = require('tar');
-var os = require('os');
-var tmp = os.tmpdir();
 var join = path.join;
 
 /**
@@ -56,9 +55,11 @@ var home = process.env.HOME || process.env.HOMEPATH;
 
 /**
  * Cache tarballs in "$tmp/duo"
+ * and make sure it exists
  */
 
-var cache = Package.cache = Cache(join(tmp, 'duo'));
+var cache = join(tmp, 'duo');
+mkdir(cache);
 
 /**
  * API url
@@ -93,15 +94,16 @@ auth.login && auth.password
 
 function Package(repo, ref) {
   if (!(this instanceof Package)) return new Package(repo, ref);
-  Emitter.call(this);
   this.repo = repo.replace(':', '/');
-  this.ref = ref || '*';
-  this.ua = 'duo-package';
-  this.dir = process.cwd();
-  this.user = auth.login || null;
   this.token = auth.password || null;
+  this.user = auth.login || null;
   this.setMaxListeners(Infinity);
+  this.dir = process.cwd();
+  this.ua = 'duo-package';
+  this.checkcache = true;
   this.resolved = false;
+  this.ref = ref || '*';
+  Emitter.call(this);
 };
 
 /**
@@ -163,16 +165,30 @@ Package.prototype.auth = function(user, token) {
   return this;
 };
 
+
 /**
- * Authenticated ?
+ * Lookup in cache
  *
+ * @param {Boolean} cache
+ */
+
+Package.prototype.cache = function(cache) {
+  this.checkcache = cache == undefined ? true : cache;
+  return this;
+};
+
+
+/**
+ * Ensure we're authenticated
+ *
+ * @return {Package}
  * @api private
  */
 
 Package.prototype.authenticated = function(){
   var auth = this.user && this.token;
-  if (auth) return;
-  throw new Error([
+  if (auth) return this;
+  throw this.error([
     'Github authentication error:',
     'make sure you have ~/.netrc or',
     'specify $GH_USER=<user> $GH_TOKEN=<token>.'
@@ -221,138 +237,80 @@ Package.prototype.resolve = function *() {
 };
 
 /**
- * Read a file from github
- *
- * TODO: either remove entirely, or
- * replace co-req with something else, or
- * fix random request dropping in co-req
- *
- * @param {String} path
- * @param {String} content
- * @api public
- */
-
-Package.prototype.read = function *(path) {
-  var ref = this.resolved || (yield this.resolve());
-
-  this.emit('reading');
-  this.debug('reading %s', path);
-
-  // try local read first
-  try {
-    var str = yield this.readLocal(join(this.dir, this.slug(), path));
-    this.emit('read');
-    this.debug('read local copy of %s', path);
-    return str;
-  } catch(e) {}
-
-  // fetch from github
-  var url = api + '/repos/' + this.repo + '/contents/' + path + '?ref=' + ref;
-  var opts = this.options(url, { json: true });
-  var req = coreq(url, opts);
-  var res = yield req;
-
-  if (res.statusCode != 200 ) {
-    throw this.error(res.statusCode);
-  }
-
-  var len = res.headers['content-length'];
-  var body = '';
-  var buf;
-
-
-  while (buf = yield req) {
-    len -= buf.length;
-    body += buf.toString();
-  }
-
-  // ensure downloaded matches the content-length
-  if (len) throw this.error('incomplete download');
-
-  body = JSON.parse(body);
-  var content = new Buffer(body.content, 'base64').toString();
-
-  this.emit('read')
-  this.debug('read remote copy of %s from %s', path, url);
-
-  return content;
-};
-
-/**
- * Read locally
- */
-
-Package.prototype.readLocal = function *(path) {
-  return yield fs.readFile(path, 'utf8');
-}
-
-/**
  * Fetch the tarball from github
  * extracting to `dir`
  *
+ * @param {Object} opts
  * @return {Package} self
  * @api public
  */
 
-Package.prototype.fetch = function *() {
+Package.prototype.fetch = function *(opts) {
   this.authenticated();
+
+  opts = opts || {};
+  opts.force = opts.force == undefined ? opts.force : false;
 
   // resolve
   var ref = this.resolved || (yield this.resolve());
-  var slug = this.slug();
+  var tarball = join(cache, this.slug() + '.tar.gz');
   var dest = this.path();
 
-  // inflight
+  // inflight, wait till other package completes
   if (inflight[dest]) {
     var pkg = inflight[dest];
-    if (pkg.fetched) return;
-    yield function(done){
-      pkg.once('fetch', done);
-    };
-    return this;
+    yield function(done){ pkg.once('fetch', done); }
   }
 
   // inflight
   inflight[dest] = this;
 
-  // fetching
-  this.emit('fetching');
-  this.debug('fetching');
+  // check if directory already exists
+  if (yield this.exists()) {
 
-  // url and options for "request" and "decompress"
-  var url = api + '/repos/' + this.repo + '/tarball/' + ref;
-  var opts = this.options(url);
-  var cached;
-
-  // if it exists in the cache extract it.
-  if (cached = yield cache.lookup(slug)) {
-    yield extract(cached, dest, slug);
+    // already exists
+    this.emit('fetching');
+    this.debug('already exists');
     this.emit('fetch');
-    this.fetched = true;
-    this.debug('fetched from cache');
+    delete inflight[dest];
+
     return this;
   }
 
-  // tarball stream
-  var store = enstore();
-  var remote = request(url, opts);
+  // check the cache
+  if (yield exists(tarball)) {
 
-  // store
-  remote.pipe(store.createWriteStream());
+    // extracting
+    this.emit('fetching');
+    this.debug('extracting from cache')
 
-  // cache if it's a valid semver
-  if (semver.valid(ref)) {
-    yield cache.add(slug, store.createReadStream());
+    // extract
+    yield this.extract(tarball, dest);
+
+    // extracted
+    this.emit('fetch');
+    this.debug('extracted from cache')
+    delete inflight[dest];
+
+    return this;
   }
 
-  // extract to directory
-  yield extract(store.createReadStream(), dest, slug);
-  this.debug('extract to %s', dest);
+  // api endpoint
+  var url = fmt('%s/repos/%s/tarball/%s', api, this.repo, ref);
+  var reqopts = this.options(url);
 
-  // fetched
+  // fetching
+  this.emit('fetching');
+  this.debug('fetching from %s', url);
+
+  // download tarball and extract
+  yield this.download(reqopts, tarball);
+  yield this.extract(tarball, dest)
+
+  // fetch
   this.emit('fetch');
-  this.fetched = true;
-  this.debug('fetched package');
+  this.debug('fetched from %s', url);
+  delete inflight[dest];
 
   return this;
 };
@@ -365,7 +323,7 @@ Package.prototype.fetch = function *() {
  */
 
 Package.prototype.exists = function*(){
-  return yield fs.exists(this.path());
+  return yield exists(this.path());
 };
 
 /**
@@ -380,36 +338,6 @@ Package.prototype.slug = function() {
   var repo = this.repo.replace('/', '-');
   var ref = this.resolved || this.ref;
   return repo + '@' + ref;
-};
-
-/**
- * Debug
- *
- * @param {String} str
- * @param {Mixed, ...} args
- * @return {Package}
- */
-
-Package.prototype.debug = function(str) {
-  var args = [].slice.call(arguments, 1);
-  var slug = this.slug();
-  str = fmt('%s: %s', slug, str);
-  debug.apply(debug, [str].concat(args));
-  return this;
-};
-
-/**
- * Error
- *
- * @param {String} str
- * @return {Error}
- * @api public
- */
-
-Package.prototype.error = function(msg) {
-  var msg = this.slug() + ': ' + msg;
-  var args = [].slice.call(arguments, 1);
-  return new Error(fmt.apply(null, [msg].concat(args)));
 };
 
 /**
@@ -440,6 +368,147 @@ Package.prototype.options = function(url, other){
 };
 
 /**
+ * Reliably download the package
+ *
+ * @param {Object} opts
+ * @param {String} dest
+ * @return {Function}
+ * @api private
+ */
+
+Package.prototype.download = function(opts, dest) {
+  var store = enstore();
+  var body = store.createWriteStream();
+  var self = this;
+  var prev = 0;
+  var len = 0;
+
+  return function(fn) {
+    var req = request(opts);
+
+    // handle any errors from the request
+    req.on('error', error);
+
+    // pipe data into in-memory store
+    req.pipe(body);
+
+    req.on('response', function(res) {
+      var status = res.statusCode;
+      var headers = res.headers;
+      var total = +headers['content-length'];
+
+      // Sometimes the response doesn't include a content-length (wtf?)
+      // Error out for now. Maybe be more optimistic in the future.
+      if (!total) {
+        return fn(self.error('error downloading. response missing content-length (dump: %j %j)', opts, headers));
+      }
+
+      // Ensure that we have the write status code
+      if (status < 200 || status >= 300) {
+        return fn(self.error('returned with status code: %s', status));
+      }
+
+      // listen for data and emit percentages
+      req.on('data', function(buf) {
+        len += buf.length;
+        var percent = Math.round(len / total * 100);
+        if (prev >= percent) return;
+        self.debug('progress %s', percent);
+        self.emit('progress', percent);
+        prev = percent;
+      })
+
+      req.on('end', function(res) {
+        // validate the data received vs. the data expected
+        if (total != len) {
+          return fn(self.error('incomplete download. received %s, expected %s', len, total));
+        }
+
+        self.debug('request complete');
+
+        // write to dest
+        var end = write(dest);
+        end.on('error', error);
+        end.on('close', function() {
+          self.debug('written to %s', dest);
+          return fn(null, status);
+        });
+
+        // pipe from in-memory stream to destination
+        store.createReadStream().pipe(end);
+      })
+
+      // abort if there's an interruption
+      process.on('SIGINT', function() { req.abort(); })
+    });
+
+    function error(err) {
+      return fn(self.error(err));
+    }
+  }
+};
+
+/**
+ * Extract the tarball
+ *
+ * @param {String} src
+ * @param {String} dest
+ * @return {Function}
+ * @api private
+ */
+
+Package.prototype.extract = function(src, dest) {
+  var stream = read(src);
+  var self = this;
+
+  return function(fn) {
+    stream
+      .on('error', error)
+      .pipe(zlib.createGunzip())
+      .on('error', error)
+      .pipe(tar.Extract({ path: dest, strip: 1 }))
+      .on('error', error)
+      .on('end', fn);
+
+    function error(err) {
+      return fn(self.error(err));
+    }
+  };
+};
+
+/**
+ * Debug
+ *
+ * @param {String} str
+ * @param {Mixed, ...} args
+ * @return {Package}
+ * @api private
+ */
+
+Package.prototype.debug = function(str) {
+  var args = [].slice.call(arguments, 1);
+  var slug = this.slug();
+  str = fmt('%s: %s', slug, str);
+  debug.apply(debug, [str].concat(args));
+  return this;
+};
+
+/**
+ * Error
+ *
+ * @param {String} str
+ * @return {Error}
+ * @api private
+ */
+
+Package.prototype.error = function(msg) {
+  msg = msg.message || msg;
+  var msg = this.slug() + ': ' + msg;
+  var args = [].slice.call(arguments, 1);
+  return new Error(fmt.apply(null, [msg].concat(args)));
+};
+
+/**
  * Get a cached `repo`, `ref`.
  *
  * @param {String} repo
@@ -461,31 +530,18 @@ function cached(repo, ref){
 }
 
 /**
- * Extract `src`, `dest`
+ * Exists
  *
- * @param {String} src
- * @param {String} dest
- * @param {String} repo
- * @return {Function}
+ * @param {String} path
+ * @return {Boolean}
  * @api private
  */
 
-function extract(src, dest, repo){
-  return function(done){
-    var stream = 'string' == typeof src
-      ? read(src)
-      : src;
-
-    stream
-    .on('error', error)
-    .pipe(zlib.createGunzip())
-    .on('error', error)
-    .pipe(tar.Extract({ path: dest, strip: 1 }))
-    .on('error', error)
-    .on('end', done);
-
-    function error(err){
-      done(new Error(repo + ': ' + err.message));
-    }
-  };
+function *exists(path) {
+  try {
+    yield fs.stat(path);
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
