@@ -385,7 +385,7 @@ Package.prototype.download = function(opts) {
     req.on('error', error);
 
     store.on('end', function() {
-      process.off('SIGINT', abort);
+      process.removeListener('SIGINT', abort);
       return fn(null, store);
     });
 
