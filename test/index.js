@@ -17,7 +17,7 @@ describe('duo-package', function(){
   })
 
   afterEach(function(){
-    // rimraf(__dirname + '/tmp');
+    rimraf(__dirname + '/tmp');
   })
 
   it('should install correctly', function*(){

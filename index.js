@@ -16,11 +16,11 @@ var request = require('request');
 var tmp = require('os').tmpdir();
 var thunk = require('thunkify');
 var semver = require('semver');
+var tar = require('tar-fs');
 var path = require('path');
 var zlib = require('zlib');
 var fs = require('co-fs');
 var url = require('url');
-var tar = require('tar');
 var join = path.join;
 
 /**
@@ -58,8 +58,8 @@ var home = process.env.HOME || process.env.HOMEPATH;
  * and make sure it exists
  */
 
-var cache = join(tmp, 'duo');
-mkdir(cache);
+var cachepath = join(tmp, 'duo');
+mkdir(cachepath);
 
 /**
  * API url
@@ -100,9 +100,9 @@ function Package(repo, ref) {
   this.setMaxListeners(Infinity);
   this.dir = process.cwd();
   this.ua = 'duo-package';
-  this.checkcache = true;
   this.resolved = false;
   this.ref = ref || '*';
+  this._cache = true;
   Emitter.call(this);
 };
 
@@ -253,7 +253,8 @@ Package.prototype.fetch = function *(opts) {
 
   // resolve
   var ref = this.resolved || (yield this.resolve());
-  var tarball = join(cache, this.slug() + '.tar.gz');
+  var url = fmt('%s/repos/%s/tarball/%s', api, this.repo, ref);
+  var cache = join(cachepath, this.slug() + '.tar.gz');
   var dest = this.path();
 
   // inflight, wait till other package completes
@@ -278,14 +279,14 @@ Package.prototype.fetch = function *(opts) {
   }
 
   // check the cache
-  if (yield exists(tarball)) {
+  if (yield exists(cache)) {
 
     // extracting
     this.emit('fetching');
     this.debug('extracting from cache')
 
     // extract
-    yield this.extract(tarball, dest);
+    yield this.extract(cache, dest);
 
     // extracted
     this.emit('fetch');
@@ -295,17 +296,18 @@ Package.prototype.fetch = function *(opts) {
     return this;
   }
 
-  // api endpoint
-  var url = fmt('%s/repos/%s/tarball/%s', api, this.repo, ref);
-  var reqopts = this.options(url);
-
   // fetching
   this.emit('fetching');
   this.debug('fetching from %s', url);
 
   // download tarball and extract
-  yield this.download(reqopts, tarball);
-  yield this.extract(tarball, dest)
+  var store = yield this.download(this.options(url));
+
+  if (this._cache) {
+    yield [this.write(store, cache), this.extract(store, dest)];
+  } else {
+    yield this.extract(store, dest);
+  }
 
   // fetch
   this.emit('fetch');
@@ -368,17 +370,17 @@ Package.prototype.options = function(url, other){
 };
 
 /**
- * Reliably download the package
+ * Reliably download the package.
+ * Returns a store to be piped around.
  *
  * @param {Object} opts
- * @param {String} dest
  * @return {Function}
  * @api private
  */
 
-Package.prototype.download = function(opts, dest) {
+Package.prototype.download = function(opts) {
   var store = enstore();
-  var body = store.createWriteStream();
+  var gzip = store.createWriteStream();
   var self = this;
   var prev = 0;
   var len = 0;
@@ -389,19 +391,16 @@ Package.prototype.download = function(opts, dest) {
     // handle any errors from the request
     req.on('error', error);
 
-    // pipe data into in-memory store
-    req.pipe(body);
+    store.on('end', function() {
+      return fn(null, store);
+    });
 
     req.on('response', function(res) {
       var status = res.statusCode;
       var headers = res.headers;
-      var total = +headers['content-length'];
 
-      // Sometimes the response doesn't include a content-length (wtf?)
-      // Error out for now. Maybe be more optimistic in the future.
-      if (!total) {
-        return fn(self.error('error downloading. response missing content-length (dump: %j %j)', opts, headers));
-      }
+      // github doesn't always return a content-length (wtf?)
+      var total = +headers['content-length'];
 
       // Ensure that we have the write status code
       if (status < 200 || status >= 300) {
@@ -412,31 +411,17 @@ Package.prototype.download = function(opts, dest) {
       req.on('data', function(buf) {
         len += buf.length;
         var percent = Math.round(len / total * 100);
-        if (prev >= percent) return;
+        // TODO figure out what to do when no total
+        if (!total || prev >= percent) return;
         self.debug('progress %s', percent);
         self.emit('progress', percent);
         prev = percent;
       })
 
-      req.on('end', function(res) {
-        // validate the data received vs. the data expected
-        if (total != len) {
-          return fn(self.error('incomplete download. received %s, expected %s', len, total));
-        }
-
-        self.debug('request complete');
-
-        // write to dest
-        var end = write(dest);
-        end.on('error', error);
-        end.on('close', function() {
-          self.debug('written to %s', dest);
-          return fn(null, status);
-        });
-
-        // pipe from in-memory stream to destination
-        store.createReadStream().pipe(end);
-      })
+      // pipe data into gunzip, then in-memory store
+      req.pipe(zlib.createGunzip())
+        .on('error', error)
+        .pipe(gzip);
 
       // abort if there's an interruption
       process.on('SIGINT', function() { req.abort(); })
@@ -451,30 +436,58 @@ Package.prototype.download = function(opts, dest) {
 /**
  * Extract the tarball
  *
- * @param {String} src
+ * @param {Enstore|String} store
  * @param {String} dest
  * @return {Function}
  * @api private
  */
 
-Package.prototype.extract = function(src, dest) {
-  var stream = read(src);
+Package.prototype.extract = function(store, dest) {
   var self = this;
+
+  // create a stream
+  var stream = 'string' == typeof store
+    ? read(store)
+    : store.createReadStream();
 
   return function(fn) {
     stream
       .on('error', error)
-      .pipe(zlib.createGunzip())
+      .pipe(tar.extract(dest, { strip: 1 }))
       .on('error', error)
-      .pipe(tar.Extract({ path: dest, strip: 1 }))
-      .on('error', error)
-      .on('end', fn);
+      .on('finish', fn);
 
     function error(err) {
       return fn(self.error(err));
     }
   };
 };
+
+/**
+ * Write the tarball
+ *
+ * @param {Enstore} store
+ * @param {String} dest
+ * @return {Function}
+ * @api private
+ */
+
+Package.prototype.write = function(store, dest) {
+  var read = store.createReadStream();
+  var stream = write(dest);
+  var self = this;
+
+  return function(fn) {
+    read.pipe(stream)
+      .on('error', error)
+      .on('finish', fn)
+
+    function error(err) {
+      return fn(self.error(err));
+    }
+  };
+};
+
 
 /**
  * Debug

@@ -16,7 +16,7 @@
     "node-netrc": "0.0.1",
     "request": "^2.36.0",
     "semver": "~2.3.0",
-    "tar": "^0.1.19",
+    "tar-fs": "^0.4.1",
     "thunkify": "0.0.1"
   },
   "devDependencies": {
