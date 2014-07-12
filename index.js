@@ -296,11 +296,14 @@ Package.prototype.fetch = function *(opts) {
   // download tarball and extract
   var store = yield this.download(this.options(url));
 
-  if (this._cache) {
-    yield [this.write(store, cache), this.extract(store, dest)];
-  } else {
-    yield this.extract(store, dest);
-  }
+  // cache, extract
+  var cacheable = this._cache && semver.validRange(ref);
+  var gens = [];
+
+  if (cacheable) gens.push(this.write(store, cache));
+  gens.push(this.extract(store, dest));
+
+  yield gens;
 
   // fetch
   this.emit('fetch');
