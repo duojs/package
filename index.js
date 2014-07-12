@@ -385,7 +385,6 @@ Package.prototype.download = function(opts) {
     req.on('error', error);
 
     store.on('end', function() {
-      process.removeListener('SIGINT', abort);
       return fn(null, store);
     });
 
@@ -410,20 +409,13 @@ Package.prototype.download = function(opts) {
         self.debug('progress %s', percent);
         self.emit('progress', percent);
         prev = percent;
-      })
+      });
 
       // pipe data into gunzip, then in-memory store
       req.pipe(zlib.createGunzip())
         .on('error', error)
         .pipe(gzip);
     });
-
-    // abort if there's an interruption
-    process.once('SIGINT', abort);
-
-    function abort() {
-      req.abort();
-    }
 
     function error(err) {
       return fn(self.error(err));
