@@ -481,35 +481,32 @@ Package.prototype.write = function(store, dest) {
   };
 };
 
-
 /**
  * Debug
  *
- * @param {String} str
+ * @param {String} msg
  * @param {Mixed, ...} args
  * @return {Package}
  * @api private
  */
 
-Package.prototype.debug = function(str) {
+Package.prototype.debug = function(msg) {
   var args = [].slice.call(arguments, 1);
-  var slug = this.slug();
-  str = fmt('%s: %s', slug, str);
-  debug.apply(debug, [str].concat(args));
+  msg = fmt('%s: %s', this.slug(), msg);
+  debug.apply(debug, [msg].concat(args));
   return this;
 };
 
 /**
  * Error
  *
- * @param {String} str
+ * @param {String} msg
  * @return {Error}
  * @api private
  */
 
 Package.prototype.error = function(msg) {
-  msg = msg.message || msg;
-  var msg = this.slug() + ': ' + msg;
+  msg = fmt('%s: %s', this.slug(), msg.message || msg);
   var args = [].slice.call(arguments, 1);
   return new Error(fmt.apply(null, [msg].concat(args)));
 };
