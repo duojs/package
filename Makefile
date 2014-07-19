@@ -1,24 +1,27 @@
 BIN := ./node_modules/.bin
 NODE ?= node
+SRC = $(shell find lib/ -name "*.js")
 
-all: $(patsubst lib/%.js,build/%.js,$(wildcard lib/*.js))
 
-build:
-	mkdir $@
-
-build/%.js: lib/%.js | node_modules build
-	$(BIN)/regenerator $^ > $@
-
-test: all
-	@$(NODE) $(BIN)/_mocha
+all: build
 
 node_modules: package.json
-	@npm i
+	@npm install
+
+build: $(patsubst lib/%,build/%,$(SRC))
+
+build/%.js: lib/%.js
+	@mkdir -p $(dir $@)
+	@$(BIN)/regenerator $< > $@
+
+test: build
+	@$(NODE) $(BIN)/_mocha
 
 clean:
-	rm -rf build
+	@rm -rf build
 
 distclean:
-	rm -rf node_modules
+	@rm -rf node_modules
 
-.PHONY: test clean
+
+.PHONY: all test clean distclean

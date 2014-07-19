@@ -32,6 +32,6 @@
   "main": "index.js",
   "scripts": {
     "test": "NODE=gnode make test",
-    "prepublish": "make clean build"
+    "prepublish": "make build"
   }
 }
