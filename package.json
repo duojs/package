@@ -31,8 +31,7 @@
   },
   "main": "index.js",
   "scripts": {
-    "build": "regenerator lib/ --out build/",
-    "test": "gnode ./node_modules/.bin/_mocha",
-    "prepublish": "npm run build"
+    "test": "NODE=gnode make test",
+    "prepublish": "make clean build"
   }
 }
