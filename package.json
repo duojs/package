@@ -26,7 +26,7 @@
     "gnode": "0.0.8",
     "mkdirp": "^0.5.0",
     "mocha": "*",
-    "regenerator": "dominicbarnes/regenerator",
+    "regenerator": "~0.4.10",
     "rimraf": "^2.2.8"
   },
   "main": "index.js",
