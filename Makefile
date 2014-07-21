@@ -1,5 +1,5 @@
 BIN := ./node_modules/.bin
-NODE ?= node
+NODE ?= node --harmony-generators
 SRC = $(shell find lib/ -name "*.js")
 
 
