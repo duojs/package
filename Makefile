@@ -1,12 +1,27 @@
+BIN := ./node_modules/.bin
+NODE ?= node --harmony-generators
+SRC = $(shell find lib/ -name "*.js")
 
-test: node_modules
-	@node_modules/.bin/mocha \
-		--reporter spec \
-		--require co-mocha \
-		--timeout 5s \
-		--harmony-generators
+
+all: build
 
 node_modules: package.json
-	@npm i
+	@npm install
 
-.PHONY: test
+build: $(patsubst lib/%,build/%,$(SRC))
+
+build/%.js: lib/%.js
+	@mkdir -p $(dir $@)
+	@$(BIN)/regenerator $< > $@
+
+test: build
+	@$(NODE) $(BIN)/_mocha
+
+clean:
+	@rm -rf build
+
+distclean:
+	@rm -rf node_modules
+
+
+.PHONY: all test clean distclean
