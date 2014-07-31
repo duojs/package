@@ -95,4 +95,11 @@ describe('duo-package', function(){
     yield [a.fetch(), b.fetch(), c.fetch(), d.fetch()];
     assert(exists(__dirname + '/tmp/component-tip@1.0.3/component.json'));
   })
+
+  it('should work with renamed repos', function *() {
+    var pkg = Package('component/get-document', '0.1.0');
+    pkg.directory(__dirname + '/tmp')
+    yield pkg.fetch();
+    assert(exists(__dirname + '/tmp/component-get-document@0.1.0/component.json'));
+  })
 })
