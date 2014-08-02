@@ -1,4 +1,15 @@
 
+0.4.0 / 2014-08-02
+==================
+
+ * support callbacks
+ * follow renamed repos
+ * changed Package#auth(user, token) to Package#token(token) since user is no longer necessary
+ * simplifying node v0.10 support via gnode
+ * add curl cmd to debug()
+ * clean up Package#debug() & Package#error()
+ * remove abort
+
 0.3.4 / 2014-07-12
 ==================
 
