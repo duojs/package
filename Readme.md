@@ -24,10 +24,10 @@ var pkg = new Package('matthewmueller/cheerio', '0.13.x')
   .token(process.env.token)
   .directory('components');
 
-co(function *() {
-  return yield pkg.fetch();
-})(fn);
-
+pkg.fetch(function(err) {
+  if (err) throw err;
+  console.log('fetched: %s', pkg.slug());
+})
 ```
 
 ## API
@@ -61,14 +61,6 @@ machine api.github.com
 
 set a directory to install the package in.
 
-### Package.read(path)
-
-read a file from github
-
-```js
-var content = yield pkg.read('component.json');
-```
-
 ### Package.path([path])
 
 Get the path of the fetched package. optionally add a relative `path`.
@@ -77,10 +69,18 @@ Get the path of the fetched package. optionally add a relative `path`.
 
 Get or set the user agent header duo-package uses to make requests. defaults to `duo-package`.
 
-### Package.fetch()
+### Package.resolve([fn])
+
+Resolve a package's version
+
+### Package.fetch([fn])
 
 fetch the package. returns a generator that can be yielded in a generator function or wrapped in [co](http://github.com/visionmedia/co).
 
 ```js
 yield pkg.fetch()
 ```
+
+### Package.slug()
+
+Return the full package name (ie. `component/emitter@1.0.0`)
