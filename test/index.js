@@ -101,4 +101,13 @@ describe('duo-package', function(){
     yield pkg.fetch();
     assert(exists(__dirname + '/tmp/component-get-document@0.1.0/component.json'));
   })
+
+  it('should work with callbacks', function(done) {
+    var pkg = Package('component/emitter', '0.0.x');
+    pkg.resolve(function(err, ref) {
+      if (err) done(err);
+      assert('0.0.6' == ref);
+      done();
+    })
+  })
 })

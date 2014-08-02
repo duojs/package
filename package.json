@@ -18,7 +18,8 @@
     "request": "^2.36.0",
     "semver": "~2.3.0",
     "tar-fs": "^0.4.1",
-    "thunkify": "0.0.1"
+    "thunkify": "0.0.1",
+    "unyield": "0.0.1"
   },
   "devDependencies": {
     "co": "^3.0.5",
