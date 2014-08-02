@@ -51,8 +51,7 @@ describe('duo-package', function(){
     var pkg = Package('component/type', '1.0.0');
     var a, b;
 
-    pkg.user = null;
-    pkg.token = null;
+    pkg.tok = null;
 
     try {
       yield pkg.fetch();
@@ -71,7 +70,7 @@ describe('duo-package', function(){
       'component-type@1.0.0:',
       'Github authentication error:',
       'make sure you have ~/.netrc or',
-      'specify $GH_USER=<user> $GH_TOKEN=<token>.'
+      'specify $GH_TOKEN=<token>.'
     ].join(' '));
   })
 

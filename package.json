@@ -12,7 +12,7 @@
     "co-fs": "^1.2.0",
     "debug": "^0.8.0",
     "enstore": "0.0.2",
-    "gh-resolve": "^2.0.2",
+    "gh-resolve": "^3.0.0",
     "gnode": "0.0.8",
     "node-netrc": "0.0.1",
     "request": "^2.36.0",
