@@ -51,8 +51,7 @@ describe('duo-package', function(){
     var pkg = Package('component/type', '1.0.0');
     var a, b;
 
-    pkg.user = null;
-    pkg.token = null;
+    pkg.tok = null;
 
     try {
       yield pkg.fetch();
@@ -71,7 +70,7 @@ describe('duo-package', function(){
       'component-type@1.0.0:',
       'Github authentication error:',
       'make sure you have ~/.netrc or',
-      'specify $GH_USER=<user> $GH_TOKEN=<token>.'
+      'specify $GH_TOKEN=<token>.'
     ].join(' '));
   })
 
@@ -94,5 +93,12 @@ describe('duo-package', function(){
     d.directory(__dirname + '/tmp');
     yield [a.fetch(), b.fetch(), c.fetch(), d.fetch()];
     assert(exists(__dirname + '/tmp/component-tip@1.0.3/component.json'));
+  })
+
+  it('should work with renamed repos', function *() {
+    var pkg = Package('component/get-document', '0.1.0');
+    pkg.directory(__dirname + '/tmp')
+    yield pkg.fetch();
+    assert(exists(__dirname + '/tmp/component-get-document@0.1.0/component.json'));
   })
 })

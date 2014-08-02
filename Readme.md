@@ -21,7 +21,7 @@ npm install duo-package
 
 ```js
 var pkg = new Package('matthewmueller/cheerio', '0.13.x')
-  .auth(process.env.user, process.env.token)
+  .token(process.env.token)
   .directory('components');
 
 co(function *() {
@@ -45,11 +45,11 @@ Package('matthewmueller/uid', 'some/feature');
 Package('matthewmueller/uid', '~0.1.0');
 ```
 
-### Package#auth(user, token)
+### Package#token(token)
 
 authenticate with github. you can create a new token here: https://github.com/settings/tokens/new.
 
-if the `user` and `token` are not present, duo-package will try reading the authentication details from your `~/.netrc`. Here's an example:
+if the `token` is not present, duo-package will try reading the authentication details from your `~/.netrc`. Here's an example:
 
 ```
 machine api.github.com
