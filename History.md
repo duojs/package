@@ -1,4 +1,10 @@
 
+0.4.1 / 2014-08-02
+==================
+
+ * bump gh-resolve
+ * package.json: Add missing mkdirp dep
+
 0.4.0 / 2014-08-02
 ==================
 
