@@ -110,4 +110,12 @@ describe('duo-package', function(){
       done();
     })
   })
+
+  it('should resolve a bitbucket package', function *() {
+    var pkg = Package('stephenmathieson/testything', '1.x');
+    pkg.directory(__dirname + '/tmp');
+    pkg.provider(require('../lib/bitbucket'));
+    yield pkg.fetch();
+    assert(exists(__dirname + '/tmp/stephenmathieson-testything@1.2.3/component.json'));
+  })
 })
