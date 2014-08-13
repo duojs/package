@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "co-fs": "^1.2.0",
-    "debug": "^0.8.0",
+    "debug": "^0.7.4",
     "enstore": "0.0.2",
     "gh-resolve": "^3.0.1",
     "gnode": "0.0.8",
