@@ -9,6 +9,7 @@
     "url": "git://github.com/matthewmueller/duo-package.git"
   },
   "dependencies": {
+    "bb-resolve": "0.0.0",
     "co-fs": "^1.2.0",
     "debug": "^0.7.4",
     "enstore": "0.0.2",
