@@ -110,4 +110,13 @@ describe('duo-package', function(){
       done();
     })
   })
+
+  it('should work on weird forked semvers', function(done){
+    var pkg = Package('segmentio/marked', '*');
+    pkg.resolve(function (err, ref) {
+      if (err) return done(err);
+      assert(/v[.\d]+/.test(ref));
+      done();
+    });
+  })
 })
