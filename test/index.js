@@ -33,8 +33,8 @@ describe('duo-package', function(){
     assert(exists(__dirname + '/tmp/component-emitter@master/component.json'));
   })
 
-  it('should error when package is not found (404)', function*(){
-    var pkg = Package('component/404', '1.0.0');
+  it('should error when package is not found (status code: 406)', function*(){
+    var pkg = Package('component/406', '1.0.0');
     pkg.directory(__dirname + '/tmp');
     var msg;
 
@@ -44,7 +44,7 @@ describe('duo-package', function(){
       msg = e.message;
     }
 
-    assert.equal('component-404@1.0.0: returned with status code: 404', msg);
+    assert.equal('component-406@1.0.0: returned with status code: 406', msg);
   })
 
   it('should throw an error when auth isnt set', function*(){
