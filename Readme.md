@@ -1,5 +1,8 @@
 # Duo Package
 
+[![NPM version][npm-image]][npm-url]
+[![build status][travis-image]][travis-url]
+
 A github package installer. Meant to be used with [duo](http://github.com/duojs/duo), but can be used outside of duo. Uses generators.
 
 ## Features
@@ -84,3 +87,26 @@ yield pkg.fetch()
 ### Package.slug()
 
 Return the full package name (ie. `component/emitter@1.0.0`)
+
+## Authors
+
+- [Matthew Mueller](https://github.com/MatthewMueller)
+- [Amir Abu Shareb](https://github.com/yields)
+- Plus many more wonderful contributors!
+
+## License
+
+The MIT License
+
+Copyright &copy; 2014
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+[npm-image]: https://img.shields.io/npm/v/duo-package.svg?style=flat
+[npm-url]: https://npmjs.org/package/duo-package
+[travis-image]: https://img.shields.io/travis/duojs/package.svg?style=flat
+[travis-url]: https://travis-ci.org/duojs/package
