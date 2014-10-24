@@ -47,33 +47,6 @@ describe('duo-package', function(){
     assert.equal('component-406@1.0.0: returned with status code: 406', msg);
   })
 
-  it('should throw an error when auth isnt set', function*(){
-    var pkg = Package('component/type', '1.0.0');
-    var a, b;
-
-    pkg.tok = null;
-
-    try {
-      yield pkg.fetch();
-    } catch (e) {
-      a = e.message
-    }
-
-    try {
-      yield pkg.resolve();
-    } catch (e) {
-      b = e.message;
-    }
-
-    assert.equal(a, b);
-    assert.equal(a, [
-      'component-type@1.0.0:',
-      'Github authentication error:',
-      'make sure you have ~/.netrc or',
-      'specify $GH_TOKEN=<token>.'
-    ].join(' '));
-  })
-
   it('should work with bootstrap', function *() {
     this.timeout(60000);
     var pkg = Package('twbs/bootstrap', 'v3.2.0');
@@ -118,5 +91,20 @@ describe('duo-package', function(){
       assert(/v[.\d]+/.test(ref));
       done();
     });
+  })
+
+  describe('private modules', function() {
+    it('should throw a meaningful error when not authenticated', function (done) {
+      var pkg = Package('matthewmueller/wordsmith', 'master');
+      pkg.directory(__dirname + '/tmp')
+      pkg.token(null);
+      pkg.fetch(function(err) {
+        assert(err);
+        assert.equal(err.message, 'matthewmueller-wordsmith@master: returned with status code: 406. You have not authenticated and this repo may be private. Make sure you have a ~/.netrc entry or specify $GH_TOKEN=<token>.');
+        done();
+      });
+    });
+
+    // TODO: figure out a way to test private modules
   })
 })
