@@ -1,4 +1,13 @@
 
+0.5.0 / 2014-10-24
+==================
+
+  * added: optional authentication
+  * package: Update debug and gnode
+  * update test for new github status code
+  * test: Verify invalid-semvers can be handled
+  * package.json: Bump gh-resolve for invalid semver support
+
 0.4.2 / 2014-08-03
 ==================
 
