@@ -107,4 +107,20 @@ describe('duo-package', function(){
 
     // TODO: figure out a way to test private modules
   })
+
+  describe('Package#useragent()', function() {
+    it('should get/set the useragent', function(){
+      var pkg = new Package('segmentio/marked', '*');
+      pkg.useragent('foo');
+      assert('foo' == pkg.useragent());
+    })
+  })
+
+  describe('Package#directory()', function() {
+    it('should get/set the directory', function(){
+      var pkg = new Package('segmentio/marked', '*');
+      pkg.directory(__dirname);
+      assert(__dirname == pkg.directory());
+    })
+  })
 })
