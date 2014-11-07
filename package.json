@@ -24,9 +24,10 @@
   },
   "devDependencies": {
     "co": "^3.0.5",
-    "co-mocha": "0.0.4",
+    "co-mocha": "^1.0.3",
+    "istanbul": "git://github.com/gotwarlost/istanbul#c6f8fc8b102cfa4e4455d6a165485b38cb58160c",
     "mkdirp": "^0.5.0",
-    "mocha": "*",
+    "mocha": "^2.0.1",
     "rimraf": "^2.2.8"
   },
   "main": "index.js"

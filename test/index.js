@@ -108,12 +108,19 @@ describe('duo-package', function(){
     // TODO: figure out a way to test private modules
   })
 
-  describe('Package#options()', function() {
-    it('should properly add a bearer token', function(){
+  describe('Package#useragent()', function() {
+    it('should get/set the useragent', function(){
       var pkg = new Package('segmentio/marked', '*');
-      pkg.token('some token');
-      var opts = pkg.options();
-      assert('Bearer some token' == opts.headers.Authorization);
+      pkg.useragent('foo');
+      assert('foo' == pkg.useragent());
+    })
+  })
+
+  describe('Package#directory()', function() {
+    it('should get/set the directory', function(){
+      var pkg = new Package('segmentio/marked', '*');
+      pkg.directory(__dirname);
+      assert(__dirname == pkg.directory());
     })
   })
 })
