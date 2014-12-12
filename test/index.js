@@ -44,7 +44,8 @@ describe('duo-package', function(){
       msg = e.message;
     }
 
-    assert.equal('component-406@1.0.0: returned with status code: 406', msg);
+
+    assert(~msg.indexOf('component-406@1.0.0: returned with status code: 406'));
   })
 
   it('should work with bootstrap', function *() {
