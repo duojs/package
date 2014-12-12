@@ -108,13 +108,4 @@ describe('duo-package', function(){
 
     // TODO: figure out a way to test private modules
   })
-
-  describe('Package#options()', function() {
-    it('should properly add a bearer token', function(){
-      var pkg = new Package('segmentio/marked', '*');
-      pkg.token('some token');
-      var opts = pkg.options();
-      assert('Bearer some token' == opts.headers.Authorization);
-    })
-  })
 })
