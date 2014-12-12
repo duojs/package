@@ -52,14 +52,6 @@ Package('matthewmueller/uid', '~0.1.0');
 
 authenticate with github. you can create a new token here: https://github.com/settings/tokens/new.
 
-if the `token` is not present, duo-package will try reading the authentication details from your `~/.netrc`. Here's an example:
-
-```
-machine api.github.com
-  login user
-  password token
-```
-
 ### Package#directory(dir)
 
 set a directory to install the package in.
