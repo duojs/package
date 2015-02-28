@@ -1,4 +1,10 @@
 
+0.6.0 / 2015-02-28
+==================
+
+  * remove netrc logic (token should be passed externally)
+  * general cleanup of authentication logic
+
 0.5.1 / 2014-10-27
 ==================
 
