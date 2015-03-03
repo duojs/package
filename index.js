@@ -3,6 +3,7 @@
  */
 
 require('gnode');
+require('es6-promise').polyfill();
 
 /**
  * single export
