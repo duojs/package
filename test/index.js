@@ -125,4 +125,12 @@ describe('duo-package', function(){
 
     // TODO: figure out a way to test private modules
   })
+
+  describe('cache', function () {
+    it('should clean the tmp dir cache', function *() {
+      assert(exists(Package.cachepath));
+      yield Package.cleanCache();
+      assert(!exists(Package.cachepath));
+    });
+  });
 })
