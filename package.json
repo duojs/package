@@ -1,6 +1,6 @@
 {
   "name": "duo-package",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "github package installer",
   "keywords": [],
   "author": "matt mueller <mattmuelle@gmail.com>",
@@ -30,6 +30,5 @@
     "mocha": "^2.0.1",
     "node-netrc": "0.0.1",
     "rimraf": "^2.2.8"
-  },
-  "main": "index.js"
+  }
 }

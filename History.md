@@ -1,4 +1,9 @@
 
+0.7.0 / 2015-03-09
+==================
+
+  * adding `Package.cleanCache()` to destroy tmp dir cache.
+
 0.6.1 / 2015-03-03
 ==================
 
