@@ -1,20 +1,22 @@
 {
   "name": "duo-package",
   "version": "0.7.0",
-  "description": "github package installer",
-  "keywords": [],
+  "description": "package downloader for duo",
+  "keywords": [
+    "duo",
+    "package",
+    "download",
+    "github"
+  ],
   "author": "matt mueller <mattmuelle@gmail.com>",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/matthewmueller/duo-package.git"
-  },
+  "repository": "duojs/package",
+  "main": "lib/index.js",
   "dependencies": {
     "co-fs": "^1.2.0",
     "debug": "^2.0.0",
     "enstore": "0.0.2",
     "es6-promise": "^2.0.1",
     "gh-resolve": "^3.0.3",
-    "gnode": "^0.1.0",
     "mkdirp": "^0.5.0",
     "request": "^2.36.0",
     "rimraf-then": "^1.0.0",
@@ -26,7 +28,7 @@
   "devDependencies": {
     "co": "^3.0.5",
     "co-mocha": "^1.1.0",
-    "mkdirp": "^0.5.0",
+    "gnode": "^0.1.1",
     "mocha": "^2.0.1",
     "node-netrc": "0.0.1",
     "rimraf": "^2.2.8"
