@@ -17,7 +17,7 @@
     "enstore": "0.0.2",
     "es6-promise": "^2.0.1",
     "gh-resolve": "^3.0.3",
-    "mkdirp": "^0.5.0",
+    "mkdirp-then": "^1.0.1",
     "request": "^2.36.0",
     "rimraf-then": "^1.0.0",
     "semver": "~2.3.0",
@@ -26,11 +26,11 @@
     "unyield": "0.0.1"
   },
   "devDependencies": {
+    "bluebird": "^2.9.15",
     "co": "^3.0.5",
-    "co-mocha": "^1.1.0",
+    "co-mocha": "1.0.3",
     "gnode": "^0.1.1",
     "mocha": "^2.0.1",
-    "node-netrc": "0.0.1",
-    "rimraf": "^2.2.8"
+    "node-netrc": "0.0.1"
   }
 }
