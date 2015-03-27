@@ -1,7 +1,7 @@
 
-var exists = require('fs').existsSync;
-var mkdirp = require('mkdirp').sync;
-var rimraf = require('rimraf').sync;
+var exists = require('co-fs').exists;
+var mkdirp = require('mkdirp-then');
+var rimraf = require('rimraf-then');
 var assert = require('assert');
 var netrc = require('node-netrc');
 var Package = require('..');
@@ -15,16 +15,16 @@ describe('duo-package', function(){
     token = auth.password;
   });
 
-  beforeEach(function(){
-    mkdirp(__dirname + '/tmp');
+  beforeEach(function*(){
+    yield mkdirp(__dirname + '/tmp');
   })
 
-  before(function(){
-    rimraf(__dirname + '/tmp');
+  before(function*(){
+    yield rimraf(__dirname + '/tmp');
   })
 
-  afterEach(function(){
-    rimraf(__dirname + '/tmp');
+  afterEach(function*(){
+    yield rimraf(__dirname + '/tmp');
   })
 
   it('should install correctly', function*(){
@@ -36,9 +36,9 @@ describe('duo-package', function(){
       return pkg.fetch();
     });
 
-    assert(exists(__dirname + '/tmp/component-type@1.0.0/component.json'));
-    assert(exists(__dirname + '/tmp/component-type@master/component.json'));
-    assert(exists(__dirname + '/tmp/component-emitter@master/component.json'));
+    assert(yield exists(__dirname + '/tmp/component-type@1.0.0/component.json'));
+    assert(yield exists(__dirname + '/tmp/component-type@master/component.json'));
+    assert(yield exists(__dirname + '/tmp/component-emitter@master/component.json'));
   })
 
   it('should error when package is not found (status code: 406)', function*(){
@@ -63,7 +63,7 @@ describe('duo-package', function(){
     pkg.directory(__dirname + '/tmp');
     pkg.token(token);
     yield pkg.fetch();
-    assert(exists(__dirname + '/tmp/twbs-bootstrap@v3.2.0/package.json'));
+    assert(yield exists(__dirname + '/tmp/twbs-bootstrap@v3.2.0/package.json'));
   })
 
   it('should handle inflight requests', function *() {
@@ -80,7 +80,7 @@ describe('duo-package', function(){
     d.directory(__dirname + '/tmp');
     d.token(token);
     yield [a.fetch(), b.fetch(), c.fetch(), d.fetch()];
-    assert(exists(__dirname + '/tmp/component-tip@1.0.3/component.json'));
+    assert(yield exists(__dirname + '/tmp/component-tip@1.0.3/component.json'));
   })
 
   it('should work with renamed repos', function *() {
@@ -88,7 +88,7 @@ describe('duo-package', function(){
     pkg.directory(__dirname + '/tmp')
     pkg.token(token);
     yield pkg.fetch();
-    assert(exists(__dirname + '/tmp/component-get-document@0.1.0/component.json'));
+    assert(yield exists(__dirname + '/tmp/component-get-document@0.1.0/component.json'));
   })
 
   it('should work with callbacks', function(done) {
@@ -128,9 +128,9 @@ describe('duo-package', function(){
 
   describe('cache', function () {
     it('should clean the tmp dir cache', function *() {
-      assert(exists(Package.cachepath));
+      assert(yield exists(Package.cachepath));
       yield Package.cleanCache();
-      assert(!exists(Package.cachepath));
+      assert(!(yield exists(Package.cachepath)));
     });
   });
 })
