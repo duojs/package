@@ -1,6 +1,6 @@
 {
   "name": "duo-package",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "package downloader for duo",
   "keywords": [
     "duo",
@@ -15,7 +15,6 @@
     "co-fs": "^1.2.0",
     "debug": "^2.0.0",
     "enstore": "0.0.2",
-    "es6-promise": "^2.0.1",
     "gh-resolve": "^3.0.3",
     "mkdirp-then": "^1.0.1",
     "request": "^2.36.0",
