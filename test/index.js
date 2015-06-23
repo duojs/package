@@ -41,8 +41,8 @@ describe('duo-package', function(){
     assert(yield exists(__dirname + '/tmp/component-emitter@master/component.json'));
   })
 
-  it('should error when package is not found (status code: 406)', function*(){
-    var pkg = Package('component/406', '1.0.0');
+  it('should error when package is not found (status code: 404)', function*(){
+    var pkg = Package('component/404', '1.0.0');
     pkg.directory(__dirname + '/tmp');
     pkg.token(token);
     var msg;
@@ -53,8 +53,7 @@ describe('duo-package', function(){
       msg = e.message;
     }
 
-
-    assert(~msg.indexOf('component-406@1.0.0: returned with status code: 406'));
+    assert(~msg.indexOf('component-404@1.0.0: returned with status code: 404'));
   })
 
   it('should work with bootstrap', function *() {
@@ -118,7 +117,7 @@ describe('duo-package', function(){
       pkg.token(null);
       pkg.fetch(function(err) {
         assert(err);
-        assert.equal(err.message, 'matthewmueller-wordsmith@master: returned with status code: 406. You have not authenticated and this repo may be private. Make sure you have a ~/.netrc entry or specify $GH_TOKEN=<token>.');
+        assert.equal(err.message, 'matthewmueller-wordsmith@master: returned with status code: 404. You have not authenticated and this repo may be private. Make sure you have a ~/.netrc entry or specify $GH_TOKEN=<token>.');
         done();
       });
     });
