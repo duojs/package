@@ -7,4 +7,4 @@ node_js:
 script: "make test"
 env:
   global:
-    - secure: JYP1xsnZC3TqJamdfHNy9smz+NnfaDZZKyVqI8+9SFr0Jf2Q8886zfEBO+vKImGdOgTO++YxmalE1KAz4GsNhw02cJuyL2rHxRIAjvLDQmfKa5L+Aw3E7mnuOiomWZ8V1GOxT57blqT6Lsrov8QFiBal5RuowaBheFptESDpXPI=
+    - secure: WdPVuaRFwTYKNFx7goA36QGwCPDATLT1PUL3XLilZX/AlfjgRICZn7/55WnSk7IJtkexYA4uuXlqIqefWMEACHW0gzwYrQES90wRonLUPYEbUUlfhXJFKWE1XCQRXDUDk1vX+XaIjsH52HcYGDbfauU8sRvrzOq1kPd5R2jWkRE=
