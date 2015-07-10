@@ -19,7 +19,6 @@
     "mkdirp": "^0.5.1",
     "request": "^2.36.0",
     "rimraf-then": "^1.0.0",
-    "semver": "~2.3.0",
     "tar-fs": "^0.4.1",
     "unyield": "0.0.1"
   },
