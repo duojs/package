@@ -7,6 +7,7 @@ var Package = require('..');
 var path = require('path');
 var rimraf = require('rimraf-then');
 
+var auth = netrc('api.github.com') || { token: process.env.GH_TOKEN };
 var tmp = path.join(__dirname, 'tmp');
 
 describe('duo-package', function(){
@@ -14,8 +15,7 @@ describe('duo-package', function(){
   var token = null;
 
   before(function(){
-    var auth = netrc('api.github.com') || {};
-    token = auth.password;
+    token = auth.token || auth.password;
   });
 
   beforeEach(function*(){
