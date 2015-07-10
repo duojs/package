@@ -56,7 +56,7 @@ describe('duo-package', function(){
       msg = e.message;
     }
 
-    assert(~msg.indexOf('component-404@1.0.0: returned with status code: 404'));
+    assert.equal(msg, 'unable to resolve component/404@1.0.0');
   });
 
   it('should work with bootstrap', function *() {
@@ -120,7 +120,7 @@ describe('duo-package', function(){
       pkg.token(null);
       pkg.fetch(function(err) {
         assert(err);
-        assert.equal(err.message, 'matthewmueller-wordsmith@master: returned with status code: 404. You have not authenticated and this repo may be private. Make sure you have a ~/.netrc entry or specify $GH_TOKEN=<token>.');
+        assert.equal(err.message, 'unable to resolve matthewmueller/wordsmith@master');
         done();
       });
     });

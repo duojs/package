@@ -15,13 +15,12 @@
     "co-fs": "^1.2.0",
     "debug": "^2.0.0",
     "enstore": "0.0.2",
-    "gh-resolve": "^3.0.3",
+    "gh-resolve": "^5.1.0",
     "mkdirp": "^0.5.1",
     "request": "^2.36.0",
     "rimraf-then": "^1.0.0",
     "semver": "~2.3.0",
     "tar-fs": "^0.4.1",
-    "thunkify": "0.0.1",
     "unyield": "0.0.1"
   },
   "devDependencies": {
@@ -31,6 +30,7 @@
     "eslint": "^0.24.0",
     "eslint-config-duo": "0.0.1",
     "gnode": "^0.1.1",
+    "mkdirp-then": "^1.1.0",
     "mocha": "^2.0.1",
     "node-netrc": "0.0.1"
   }
