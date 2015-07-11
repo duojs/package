@@ -7,6 +7,7 @@ var Package = require('..');
 var path = require('path');
 var rimraf = require('rimraf-then');
 
+var auth = netrc('api.github.com') || { token: process.env.GH_TOKEN };
 var tmp = path.join(__dirname, 'tmp');
 
 describe('duo-package', function(){
@@ -14,8 +15,7 @@ describe('duo-package', function(){
   var token = null;
 
   before(function(){
-    var auth = netrc('api.github.com') || {};
-    token = auth.password;
+    token = auth.token || auth.password;
   });
 
   beforeEach(function*(){
@@ -56,7 +56,7 @@ describe('duo-package', function(){
       msg = e.message;
     }
 
-    assert(~msg.indexOf('component-404@1.0.0: returned with status code: 404'));
+    assert.equal(msg, 'unable to resolve component/404@1.0.0');
   });
 
   it('should work with bootstrap', function *() {
@@ -111,21 +111,6 @@ describe('duo-package', function(){
       assert(/v[.\d]+/.test(ref));
       done();
     });
-  });
-
-  describe('private modules', function() {
-    it('should throw a meaningful error when not authenticated', function (done) {
-      var pkg = Package('matthewmueller/wordsmith', 'master');
-      pkg.directory(tmp);
-      pkg.token(null);
-      pkg.fetch(function(err) {
-        assert(err);
-        assert.equal(err.message, 'matthewmueller-wordsmith@master: returned with status code: 404. You have not authenticated and this repo may be private. Make sure you have a ~/.netrc entry or specify $GH_TOKEN=<token>.');
-        done();
-      });
-    });
-
-    // TODO: figure out a way to test private modules
   });
 
   describe('cache', function () {
