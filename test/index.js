@@ -113,21 +113,6 @@ describe('duo-package', function(){
     });
   });
 
-  describe('private modules', function() {
-    it('should throw a meaningful error when not authenticated', function (done) {
-      var pkg = Package('matthewmueller/wordsmith', 'master');
-      pkg.directory(tmp);
-      pkg.token(null);
-      pkg.fetch(function(err) {
-        assert(err);
-        assert.equal(err.message, 'unable to resolve matthewmueller/wordsmith@master');
-        done();
-      });
-    });
-
-    // TODO: figure out a way to test private modules
-  });
-
   describe('cache', function () {
     it('should clean the tmp dir cache', function *() {
       assert(yield exists(Package.cachepath));
