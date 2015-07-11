@@ -1,4 +1,11 @@
 
+0.10.0 / 2015-07-10
+===================
+
+  * using updated gh-resolve, doing less caching internally
+  * lib: Replace `mkdirp-then` with `mkdirp`
+  * eslint
+
 0.9.0 / 2015-06-23
 ==================
 
