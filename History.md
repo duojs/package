@@ -1,4 +1,10 @@
 
+0.10.1 / 2015-07-28
+===================
+
+  * now allowing parallel resolutions
+  * package: Add "license" field
+
 0.10.0 / 2015-07-10
 ===================
 
