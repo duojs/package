@@ -1,7 +1,7 @@
 # Duo Package
 
-[![NPM version][https://img.shields.io/npm/v/duo-package.svg]][https://npmjs.org/package/duo-package]
-[![build status][https://img.shields.io/travis/duojs/package.svg]][https://travis-ci.org/duojs/package]
+[![NPM version](https://img.shields.io/npm/v/duo-package.svg)](https://npmjs.org/package/duo-package)
+[![build status](https://img.shields.io/travis/duojs/package.svg)](https://travis-ci.org/duojs/package)
 
 > [Duo's](http://github.com/duojs/duo) GitHub package installer.
 
