@@ -68,6 +68,13 @@ describe('duo-package', function(){
     assert(yield exists(path.join(tmp, 'twbs-bootstrap@v3.2.0/package.json')));
   });
 
+  it('should only run once for multiple parallel resolution calls', function *() {
+    this.timeout(1000); // short timeout, since 4 resolves would exceed this time
+    var pkg = new Package('component/tip', '1.x');
+    var results = yield [ pkg.resolve(), pkg.resolve(), pkg.resolve(), pkg.resolve() ];
+    assert.deepEqual(results, [ '1.0.3', '1.0.3', '1.0.3', '1.0.3' ]);
+  });
+
   it('should handle inflight requests', function *() {
     var a = Package('component/tip', '1.x');
     var b = Package('component/tip', '1.x');
