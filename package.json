@@ -28,7 +28,6 @@
     "co-mocha": "1.0.3",
     "eslint": "^0.24.0",
     "eslint-config-duo": "0.0.1",
-    "gnode": "^0.1.1",
     "mkdirp-then": "^1.1.0",
     "mocha": "^2.0.1",
     "node-netrc": "0.0.1"
