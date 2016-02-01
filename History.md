@@ -1,4 +1,12 @@
 
+0.10.2 / 2016-02-01
+===================
+
+  * package: remove "gnode" dev dep
+  * test: remove gnode and `---harmony-generators` flag
+  * travis: remove node v0.12 and iojs
+  * travis: remove node v0.10 and v0.11, add v4
+
 0.10.1 / 2015-07-28
 ===================
 
